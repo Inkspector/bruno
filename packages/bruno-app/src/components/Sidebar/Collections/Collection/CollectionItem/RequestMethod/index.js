@@ -12,14 +12,14 @@ const getMethodFlags = (item) => ({
 const getMethodText = (item, { isGrpc, isWS, isGraphQL, isScript }) => {
   if (isGrpc) return 'grpc';
   if (isWS) return 'ws';
-  if (isScript) return 'run';
+  if (isScript) return 'cmd';
   if (isGraphQL) return 'gql';
   return item.request.method.length > 5
     ? item.request.method.substring(0, 3)
     : item.request.method;
 };
 
-const getClassname = (method = '', { isGrpc, isWS, isGraphQL }) => {
+const getClassname = (method = '', { isGrpc, isWS, isGraphQL, isScript }) => {
   method = method.toLocaleLowerCase();
   return classnames('mr-1', {
     'method-get': method === 'get',
@@ -31,7 +31,8 @@ const getClassname = (method = '', { isGrpc, isWS, isGraphQL }) => {
     'method-options': method === 'options',
     'method-grpc': isGrpc,
     'method-ws': isWS,
-    'method-graphql': isGraphQL
+    'method-graphql': isGraphQL,
+    'method-script': isScript
   });
 };
 

@@ -1,7 +1,7 @@
 import React, { useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import MenuDropdown from 'ui/MenuDropdown';
-import { newHttpRequest, newGrpcRequest, newWsRequest } from 'providers/ReduxStore/slices/collections/actions';
+import { newHttpRequest, newGrpcRequest, newWsRequest, newScriptRequest } from 'providers/ReduxStore/slices/collections/actions';
 import { generateUniqueRequestName } from 'utils/collections';
 import { sanitizeName } from 'utils/common/regex';
 import toast from 'react-hot-toast';
@@ -109,12 +109,9 @@ const CreateUntitledRequest = ({ collectionUid, itemUid = null, onRequestCreated
     const uniqueName = await generateUniqueRequestName(collection, 'Untitled', itemUid);
     const filename = sanitizeName(uniqueName);
 
-    dispatch(newHttpRequest({
+    dispatch(newScriptRequest({
       requestName: uniqueName,
-      filename: sanitizeName(uniqueName),
-      requestType: 'script-request',
-      requestUrl: '',
-      requestMethod: 'SCRIPT',
+      filename,
       collectionUid: collection.uid,
       itemUid,
       args: [],

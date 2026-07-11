@@ -326,6 +326,7 @@ export const ossSchema = {
           required: ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'],
           additionalProperties: false
         },
+        script: { type: 'string' },
         grpc: { type: 'string' },
         ws: { type: 'string' },
         gql: { type: 'string' }

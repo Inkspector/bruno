@@ -48,7 +48,7 @@ const getMethodInfo = (item) => {
     methodText = 'WS';
     methodClass = 'method-ws';
   } else if (isScript) {
-    methodText = 'RUN';
+    methodText = 'CMD';
     methodClass = 'method-script';
   } else if (isGraphQL) {
     methodText = 'GQL';

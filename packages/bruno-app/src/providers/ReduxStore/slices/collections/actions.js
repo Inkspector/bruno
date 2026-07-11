@@ -1396,9 +1396,7 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
     body,
     auth,
     settings,
-    isTransient = false,
-    args,
-    env
+    isTransient = false
   } = params;
 
   return new Promise((resolve, reject) => {
@@ -1435,7 +1433,6 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
       request: {
         method: requestMethod,
         url: requestUrl,
-        ...(requestType === 'script-request' ? { args: args ?? [], env: env ?? [] } : {}),
         headers: headers ?? [],
         params,
         body: body ?? {
@@ -1458,6 +1455,169 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
         }
       },
       settings: settings ?? {
+        encodeUrl: true
+      }
+    };
+
+    // itemUid is null when we are creating a new request at the root level
+    // For transient requests, itemUid is always null
+    const resolvedFilename = resolveRequestFilename(filename, collection.format);
+
+    if (isTransient) {
+      // Transient requests are always created in temp directory
+      // Check for duplicates only among other transient requests
+      const allItems = flattenItems(collection.items);
+      const transientRequests = filter(
+        allItems,
+        (i) => isItemARequest(i) && i.pathname && i.pathname.startsWith(tempDirectory)
+      );
+      const reqWithSameNameExists = find(transientRequests, (i) => trim(i.filename) === trim(resolvedFilename));
+      const items = filter(collection.items, (i) => isItemAFolder(i) || isItemARequest(i));
+      item.seq = items.length + 1;
+
+      if (!reqWithSameNameExists) {
+        const fullName = path.join(tempDirectory, resolvedFilename);
+        const { ipcRenderer } = window;
+
+        ipcRenderer
+          .invoke('renderer:new-request', fullName, item)
+          .then(() => {
+            // task middleware will track this and open the new request in a new tab once request is created
+            dispatch(
+              insertTaskIntoQueue({
+                uid: uuid(),
+                type: 'OPEN_REQUEST',
+                collectionUid,
+                itemPathname: fullName,
+                preview: false
+              })
+            );
+            resolve();
+          })
+          .catch(reject);
+      } else {
+        return reject(new Error('Duplicate request names are not allowed under the same folder'));
+      }
+    } else if (!itemUid) {
+      // Regular request at root level
+      const reqWithSameNameExists = find(
+        collection.items,
+        (i) => i.type !== 'folder' && trim(i.filename) === trim(resolvedFilename)
+      );
+      const items = filter(collection.items, (i) => isItemAFolder(i) || isItemARequest(i));
+      item.seq = items.length + 1;
+
+      if (!reqWithSameNameExists) {
+        const fullName = path.join(collection.pathname, resolvedFilename);
+        const { ipcRenderer } = window;
+
+        ipcRenderer
+          .invoke('renderer:new-request', fullName, item)
+          .then(() => {
+            // task middleware will track this and open the new request in a new tab once request is created
+            dispatch(
+              insertTaskIntoQueue({
+                uid: uuid(),
+                type: 'OPEN_REQUEST',
+                collectionUid,
+                itemPathname: fullName
+              })
+            );
+            resolve();
+          })
+          .catch(reject);
+      } else {
+        return reject(new Error('Duplicate request names are not allowed under the same folder'));
+      }
+    } else {
+      const currentItem = findItemInCollection(collection, itemUid);
+      if (currentItem) {
+        const reqWithSameNameExists = find(
+          currentItem.items,
+          (i) => i.type !== 'folder' && trim(i.filename) === trim(resolvedFilename)
+        );
+        const items = filter(currentItem.items, (i) => isItemAFolder(i) || isItemARequest(i));
+        item.seq = items.length + 1;
+        if (!reqWithSameNameExists) {
+          const fullName = path.join(currentItem.pathname, resolvedFilename);
+          const { ipcRenderer } = window;
+          ipcRenderer
+            .invoke('renderer:new-request', fullName, item)
+            .then(() => {
+              // task middleware will track this and open the new request in a new tab once request is created
+              dispatch(
+                insertTaskIntoQueue({
+                  uid: uuid(),
+                  type: 'OPEN_REQUEST',
+                  collectionUid,
+                  itemPathname: fullName
+                })
+              );
+              resolve();
+            })
+            .catch(reject);
+        } else {
+          return reject(new Error('Duplicate request names are not allowed under the same folder'));
+        }
+      }
+    }
+  });
+};
+
+export const newScriptRequest = (params) => (dispatch, getState) => {
+  const {
+    requestName,
+    filename,
+    collectionUid,
+    itemUid,
+    isTransient = false,
+    args,
+    env
+  } = params;
+
+  return new Promise((resolve, reject) => {
+    const state = getState();
+    const collection = findCollectionByUid(state.collections.collections, collectionUid);
+    if (!collection) {
+      return reject(new Error('Collection not found'));
+    }
+
+    // Get temp directory if isTransient is true
+    const tempDirectory = isTransient ? state.collections.tempDirectories?.[collectionUid] : null;
+
+    const item = {
+      uid: uuid(),
+      type: 'script-request',
+      name: requestName,
+      filename,
+      isTransient: isTransient,
+      request: {
+        method: 'SCRIPT',
+        url: '',
+        args: args ?? [],
+        env: env ?? [],
+        headers: [],
+        params: [],
+        body: {
+          mode: 'none',
+          json: null,
+          text: null,
+          xml: null,
+          sparql: null,
+          multipartForm: [],
+          formUrlEncoded: [],
+          file: []
+        },
+        vars: {
+          req: [],
+          res: []
+        },
+        assertions: [],
+        auth: {
+          mode: 'inherit'
+        }
+      },
+      settings: {
         encodeUrl: true
       }
     };

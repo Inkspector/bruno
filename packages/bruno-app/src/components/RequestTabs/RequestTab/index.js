@@ -71,7 +71,7 @@ const RequestTab = ({ tab, collection, tabIndex, collectionRequestTabs, folderUi
       case 'ws-request':
         return 'WS';
       case 'script-request':
-        return 'Script';
+        return 'script';
       case 'graphql-request':
         return 'GQL';
       default:
@@ -590,7 +590,7 @@ const RequestTab = ({ tab, collection, tabIndex, collectionRequestTabs, folderUi
           </span>
         ) : (
           <span className="tab-method uppercase" style={{ color: getMethodColor(method) }}>
-            {method}
+            {method != 'script' ? method : 'CMD'}
           </span>
         )}
         <span ref={tabNameRef} className="ml-1 tab-name" title={item.name}>
