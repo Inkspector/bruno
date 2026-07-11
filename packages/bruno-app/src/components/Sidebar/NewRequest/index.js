@@ -8,7 +8,7 @@ import { uuid } from 'utils/common';
 import Modal from 'components/Modal';
 import { useDispatch, useSelector } from 'react-redux';
 import { newEphemeralHttpRequest } from 'providers/ReduxStore/slices/collections';
-import { newHttpRequest, newGrpcRequest, newWsRequest } from 'providers/ReduxStore/slices/collections/actions';
+import { newHttpRequest, newGrpcRequest, newWsRequest, newScriptRequest } from 'providers/ReduxStore/slices/collections/actions';
 import { addTab } from 'providers/ReduxStore/slices/tabs';
 import HttpMethodSelector from 'components/RequestPane/QueryUrl/HttpMethodSelector';
 import { getDefaultRequestPaneTab } from 'utils/collections';
@@ -152,6 +152,7 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
     onSubmit: (values) => {
       const isGrpcRequest = values.requestType === 'grpc-request';
       const isWsRequest = values.requestType === 'ws-request';
+      const isScriptRequest = values.requestType == 'script-request';
       const filename = values.filename;
 
       if (isGrpcRequest) {
@@ -181,6 +182,21 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
           requestUrl: values.requestUrl,
           collectionUid: collection.uid,
           itemUid: item ? item.uid : null
+        }))
+          .then(() => {
+            toast.success('New request created!');
+            onClose();
+          })
+          .catch((err) => toast.error(err ? err.message : 'An error occurred while adding the request'));
+      } else if (isScriptRequest) {
+        dispatch(newScriptRequest({
+          requestName: values.requestName,
+          filename: filename,
+          requestUrl: 'myscript.sh',
+          collectionUid: collection.uid,
+          itemUid: item ? item.uid : null,
+          args: [],
+          env: []
         }))
           .then(() => {
             toast.success('New request created!');

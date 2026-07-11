@@ -111,6 +111,7 @@ const CreateUntitledRequest = ({ collectionUid, itemUid = null, onRequestCreated
 
     dispatch(newScriptRequest({
       requestName: uniqueName,
+      requestUrl: 'myscript.sh',
       filename,
       collectionUid: collection.uid,
       itemUid,

@@ -1,35 +1,77 @@
-import React, { useMemo } from 'react';
-import get from 'lodash/get';
-import { useDispatch } from 'react-redux';
-import { updateScriptRequestConfig } from 'providers/ReduxStore/slices/collections';
-import { uuid } from 'utils/common';
+import React, { useMemo, useCallback, useRef } from 'react';
+import { find } from 'lodash';
+import { updateRequestPaneTab } from 'providers/ReduxStore/slices/tabs';
+import { useDispatch, useSelector } from 'react-redux';
+import HeightBoundContainer from 'ui/HeightBoundContainer';
+import ResponsiveTabs from 'ui/ResponsiveTabs';
+import { getPropertyFromDraftOrRequest } from 'utils/collections/index';
+import StyledWrapper from './StyledWrapper';
+import ScriptEnv from './ScriptEnv';
 
-const rowsToText = (rows = []) => rows.filter((row) => row.enabled !== false).map((row) => row.name ? `${row.name}=${row.value || ''}` : row.value || '').join('\n');
-const textToRows = (value, named) => value.split('\n').filter((line) => line.trim()).map((line) => {
-  const separator = named ? line.indexOf('=') : -1;
-  return named
-    ? { uid: uuid(), name: separator < 0 ? line.trim() : line.slice(0, separator).trim(), value: separator < 0 ? '' : line.slice(separator + 1), enabled: true }
-    : { uid: uuid(), value: line, enabled: true };
-});
-
-const ScriptRequestPane = ({ item, collection }) => {
+const ScriptRequestPane = ({ item, collection, handleRun }) => {
   const dispatch = useDispatch();
-  const request = item.draft?.request || item.request;
-  const update = (key, value, named) => dispatch(updateScriptRequestConfig({
-    collectionUid: collection.uid, itemUid: item.uid,
-    args: key === 'args' ? textToRows(value, named) : request.args || [],
-    env: key === 'env' ? textToRows(value, named) : request.env || []
-  }));
-  const args = useMemo(() => rowsToText(get(request, 'args', [])), [request]);
-  const env = useMemo(() => rowsToText(get(request, 'env', [])), [request]);
+  const tabs = useSelector((state) => state.tabs.tabs);
+  const activeTabUid = useSelector((state) => state.tabs.activeTabUid);
+
+  const rightContentRef = useRef(null);
+
+  const focusedTab = find(tabs, (t) => t.uid === activeTabUid);
+  const requestPaneTab = focusedTab?.requestPaneTab;
+
+  const selectTab = useCallback(
+    (tab) => {
+      dispatch(updateRequestPaneTab({
+        uid: item.uid,
+        requestPaneTab: tab
+      }));
+    },
+    [dispatch, item.uid]
+  );
+
+  const env = getPropertyFromDraftOrRequest(item, 'script.env') || [];
+  const activeEnvLength = env.filter((envItem) => envItem.enabled).length;
+
+  const allTabs = useMemo(() => {
+    return [
+      {
+        key: 'env',
+        label: 'Env',
+        indicator: activeEnvLength > 0 ? <sup className="ml-[.125rem] font-medium">{activeEnvLength}</sup> : null
+      }
+    ];
+  }, [activeEnvLength]);
+
+  const tabPanel = useMemo(() => {
+    switch (requestPaneTab) {
+      case 'env': {
+        return <ScriptEnv item={item} collection={collection} addHeaderText="Set Env" />;
+      }
+      default: {
+        return <div className="mt-4">404 | Not found</div>;
+      }
+    }
+  }, [requestPaneTab, item, collection, handleRun]);
+
+  if (!activeTabUid || !focusedTab?.uid || !requestPaneTab) {
+    return <div className="pb-4 px-4">An error occurred!</div>;
+  }
+
+  let rightContent = null;
+
   return (
-    <div className="p-4 overflow-auto h-full">
-      <p className="text-sm text-muted mb-4">Arguments and environment variables support Bruno variables such as <code>{'{{baseUrl}}'}</code>.</p>
-      <label className="block font-medium mb-2">Arguments <small className="font-normal text-muted">(one argument per line)</small></label>
-      <textarea className="textbox w-full min-h-32" value={args} onChange={(e) => update('args', e.target.value, false)} placeholder="--verbose&#10;input.json" />
-      <label className="block font-medium mb-2 mt-5">Environment variables <small className="font-normal text-muted">(NAME=value, one per line)</small></label>
-      <textarea className="textbox w-full min-h-32" value={env} onChange={(e) => update('env', e.target.value, true)} placeholder="API_TOKEN={{token}}&#10;MODE=production" />
-    </div>
+    <StyledWrapper className="flex flex-col h-full relative">
+      <ResponsiveTabs
+        tabs={allTabs}
+        activeTab={requestPaneTab}
+        onTabSelect={selectTab}
+        rightContent={rightContent}
+        rightContentRef={rightContent ? rightContentRef : null}
+      />
+
+      <section className="flex w-full flex-1 h-full mt-4">
+        <HeightBoundContainer>{tabPanel}</HeightBoundContainer>
+      </section>
+    </StyledWrapper>
   );
 };
 

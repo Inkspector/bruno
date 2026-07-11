@@ -40,6 +40,7 @@ const createRequest = async ({ dispatch, collection, itemUid, requestType }) => 
         await dispatch(newGrpcRequest(baseParams));
         break;
       case 'script':
+        baseParams.requestUrl = 'myscript.sh',
         await dispatch(newScriptRequest({ ...baseParams, args: [], env: [] }));
         break;
     }

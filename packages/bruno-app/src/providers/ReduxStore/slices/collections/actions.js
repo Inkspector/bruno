@@ -1567,6 +1567,7 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
 export const newScriptRequest = (params) => (dispatch, getState) => {
   const {
     requestName,
+    requestUrl,
     filename,
     collectionUid,
     itemUid,
@@ -1593,7 +1594,7 @@ export const newScriptRequest = (params) => (dispatch, getState) => {
       isTransient: isTransient,
       request: {
         method: 'SCRIPT',
-        url: '',
+        url: requestUrl,
         args: args ?? [],
         env: env ?? [],
         headers: [],

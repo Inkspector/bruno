@@ -1893,6 +1893,20 @@ export const collectionsSlice = createSlice({
         }
       }
     },
+    setScriptEnv: (state, action) => {
+      const collection = findCollectionByUid(state.collections, action.payload.collectionUid);
+
+      if (collection) {
+        const item = findItemInCollection(collection, action.payload.itemUid);
+
+        if (item && isItemARequest(item)) {
+          if (!item.draft) {
+            item.draft = cloneDeep(item);
+          }
+          item.draft.request.env = action.payload.env;
+        }
+      }
+    },
     updateResponseScript: (state, action) => {
       const collection = findCollectionByUid(state.collections, action.payload.collectionUid);
 
@@ -4108,7 +4122,8 @@ export const {
   addTransientDirectory,
   addSaveTransientRequestModal,
   removeSaveTransientRequestModal,
-  clearAllSaveTransientRequestModals
+  clearAllSaveTransientRequestModals,
+  setScriptEnv
 } = collectionsSlice.actions;
 
 export default collectionsSlice.reducer;
