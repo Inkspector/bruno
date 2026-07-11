@@ -1203,6 +1203,10 @@ export const getDefaultRequestPaneTab = (item) => {
     return 'query';
   }
 
+  if (item.type === 'script-request') {
+    return 'args';
+  }
+
   if (['ws-request', 'grpc-request'].includes(item.type)) {
     return 'body';
   }

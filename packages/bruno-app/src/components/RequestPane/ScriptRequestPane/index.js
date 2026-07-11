@@ -6,6 +6,7 @@ import HeightBoundContainer from 'ui/HeightBoundContainer';
 import ResponsiveTabs from 'ui/ResponsiveTabs';
 import { getPropertyFromDraftOrRequest } from 'utils/collections/index';
 import StyledWrapper from './StyledWrapper';
+import ScriptArgs from './ScriptArgs';
 import ScriptEnv from './ScriptEnv';
 
 const ScriptRequestPane = ({ item, collection, handleRun }) => {
@@ -16,7 +17,9 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
   const rightContentRef = useRef(null);
 
   const focusedTab = find(tabs, (t) => t.uid === activeTabUid);
-  const requestPaneTab = focusedTab?.requestPaneTab;
+  const requestPaneTab = ['args', 'env'].includes(focusedTab?.requestPaneTab)
+    ? focusedTab.requestPaneTab
+    : 'args';
 
   const selectTab = useCallback(
     (tab) => {
@@ -28,26 +31,36 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
     [dispatch, item.uid]
   );
 
-  const env = getPropertyFromDraftOrRequest(item, 'script.env') || [];
+  const env = getPropertyFromDraftOrRequest(item, 'request.env') || [];
+  const args = getPropertyFromDraftOrRequest(item, 'request.args') || [];
   const activeEnvLength = env.filter((envItem) => envItem.enabled).length;
+  const activeArgsLength = args.filter((arg) => typeof arg === 'string' ? arg.trim().length > 0 : Boolean(arg)).length;
 
   const allTabs = useMemo(() => {
     return [
+      {
+        key: 'args',
+        label: 'Args',
+        indicator: activeArgsLength > 0 ? <sup className="ml-[.125rem] font-medium">{activeArgsLength}</sup> : null
+      },
       {
         key: 'env',
         label: 'Env',
         indicator: activeEnvLength > 0 ? <sup className="ml-[.125rem] font-medium">{activeEnvLength}</sup> : null
       }
     ];
-  }, [activeEnvLength]);
+  }, [activeEnvLength, activeArgsLength]);
 
   const tabPanel = useMemo(() => {
     switch (requestPaneTab) {
+      case 'args': {
+        return <ScriptArgs item={item} collection={collection} />;
+      }
       case 'env': {
         return <ScriptEnv item={item} collection={collection} addHeaderText="Set Env" />;
       }
       default: {
-        return <div className="mt-4">404 | Not found</div>;
+        return <ScriptArgs item={item} collection={collection} />;
       }
     }
   }, [requestPaneTab, item, collection, handleRun]);

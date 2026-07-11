@@ -8,7 +8,6 @@ import { updateTableColumnWidths } from 'providers/ReduxStore/slices/tabs';
 import SingleLineEditor from 'components/SingleLineEditor';
 import EditableTable from 'components/EditableTable';
 import StyledWrapper from './StyledWrapper';
-import { MimeTypes } from 'utils/codemirror/autocompleteConstants';
 import { headerNameRegex, headerValueRegex } from 'utils/common/regex';
 import { usePersistedState } from 'hooks/usePersistedState';
 import { useTrackScroll } from 'hooks/useTrackScroll';
@@ -89,7 +88,6 @@ const ScriptEnv = ({ item, collection }) => {
           onSave={onSave}
           onChange={onChange}
           onRun={handleRun}
-          autocomplete={MimeTypes}
           collection={collection}
           item={item}
           placeholder={!value ? 'Value' : ''}
