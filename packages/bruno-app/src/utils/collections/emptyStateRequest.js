@@ -1,5 +1,5 @@
 import React from 'react';
-import { IconApi, IconBrandGraphql, IconPlugConnected, IconCode } from '@tabler/icons';
+import { IconApi, IconBrandGraphql, IconPlugConnected, IconCode, IconTerminal2 } from '@tabler/icons';
 import { newHttpRequest, newWsRequest, newGrpcRequest } from 'providers/ReduxStore/slices/collections/actions';
 import { generateUniqueRequestName } from 'utils/collections';
 import { sanitizeName } from 'utils/common/regex';
@@ -38,6 +38,9 @@ const createRequest = async ({ dispatch, collection, itemUid, requestType }) => 
         break;
       case 'grpc':
         await dispatch(newGrpcRequest(baseParams));
+        break;
+      case 'script':
+        await dispatch(newHttpRequest({ ...baseParams, requestType: 'script-request', requestMethod: 'SCRIPT', args: [], env: [] }));
         break;
     }
   } catch (err) {
@@ -78,6 +81,12 @@ export const createEmptyStateMenuItems = ({ dispatch, collection, itemUid }) => 
       label: 'WebSocket',
       leftSection: <IconPlugConnected size={16} strokeWidth={2} />,
       onClick: handleCreate('websocket')
+    },
+    {
+      id: 'script',
+      label: 'Script',
+      leftSection: <IconTerminal2 size={16} strokeWidth={2} />,
+      onClick: handleCreate('script')
     }
   ];
 };

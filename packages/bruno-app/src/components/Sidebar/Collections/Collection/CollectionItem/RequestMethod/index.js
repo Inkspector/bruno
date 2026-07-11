@@ -5,12 +5,14 @@ import StyledWrapper from './StyledWrapper';
 const getMethodFlags = (item) => ({
   isGrpc: item.type === 'grpc-request',
   isWS: item.type === 'ws-request',
+  isScript: item.type === 'script-request',
   isGraphQL: item.type === 'graphql-request'
 });
 
-const getMethodText = (item, { isGrpc, isWS, isGraphQL }) => {
+const getMethodText = (item, { isGrpc, isWS, isGraphQL, isScript }) => {
   if (isGrpc) return 'grpc';
   if (isWS) return 'ws';
+  if (isScript) return 'run';
   if (isGraphQL) return 'gql';
   return item.request.method.length > 5
     ? item.request.method.substring(0, 3)
@@ -34,7 +36,7 @@ const getClassname = (method = '', { isGrpc, isWS, isGraphQL }) => {
 };
 
 const RequestMethod = ({ item }) => {
-  if (!['http-request', 'graphql-request', 'grpc-request', 'ws-request'].includes(item.type)) {
+  if (!['http-request', 'graphql-request', 'grpc-request', 'ws-request', 'script-request'].includes(item.type)) {
     return null;
   }
 

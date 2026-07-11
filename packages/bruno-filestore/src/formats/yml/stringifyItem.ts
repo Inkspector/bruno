@@ -5,6 +5,7 @@ import stringifyGrpcRequest from './items/stringifyGrpcRequest';
 import stringifyWebsocketRequest from './items/stringifyWebsocketRequest';
 import stringifyScript from './items/stringifyScript';
 import stringifyApp from './items/stringifyApp';
+import stringifyScriptRequest from './items/stringifyScriptRequest';
 
 const stringifyItem = (item: BrunoItem): string => {
   try {
@@ -20,6 +21,9 @@ const stringifyItem = (item: BrunoItem): string => {
 
       case 'ws-request':
         return stringifyWebsocketRequest(item);
+
+      case 'script-request':
+        return stringifyScriptRequest(item);
 
       case 'js':
         return stringifyScript(item);

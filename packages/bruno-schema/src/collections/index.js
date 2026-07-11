@@ -471,7 +471,7 @@ const exampleSchema = Yup.object({
   itemUid: uidSchema,
   name: Yup.string().min(1, 'name must be at least 1 character').required('name is required'),
   description: Yup.string().nullable(),
-  type: Yup.string().oneOf(['http-request', 'graphql-request', 'grpc-request',]).required('type is required'),
+  type: Yup.string().oneOf(['http-request', 'graphql-request', 'grpc-request', 'script-request']).required('type is required'),
   request: Yup.object({
     url: requestUrlSchema,
     method: requestMethodSchema,
@@ -602,6 +602,15 @@ const wsRequestSchema = Yup.object({
   .noUnknown(true)
   .strict();
 
+const scriptRequestSchema = Yup.object({
+  url: Yup.string().required(),
+  method: Yup.string().required(),
+  args: Yup.array().of(Yup.object({ uid: uidSchema, value: Yup.string().nullable(), enabled: Yup.boolean() }).noUnknown(true)).required(),
+  env: Yup.array().of(Yup.object({ uid: uidSchema, name: Yup.string().nullable(), value: Yup.string().nullable(), enabled: Yup.boolean() }).noUnknown(true)).required(),
+  headers: Yup.array().required(), params: Yup.array().required(), body: Yup.object().required(), auth: Yup.object().required(),
+  script: Yup.object().required(), vars: Yup.object().required(), assertions: Yup.array().required(), tests: Yup.string().nullable(), docs: Yup.string().nullable()
+}).noUnknown(true).strict();
+
 const wsSettingsSchema = Yup.object({
   settings: Yup.object({
     timeout: Yup.number()
@@ -650,7 +659,7 @@ const folderRootSchema = Yup.object({
 
 const itemSchema = Yup.object({
   uid: uidSchema,
-  type: Yup.string().oneOf(['http-request', 'graphql-request', 'folder', 'js', 'app', 'grpc-request', 'ws-request']).required('type is required'),
+  type: Yup.string().oneOf(['http-request', 'graphql-request', 'folder', 'js', 'app', 'grpc-request', 'ws-request', 'script-request']).required('type is required'),
   seq: Yup.number().min(1),
   name: Yup.string().min(1, 'name must be at least 1 character').required('name is required'),
   tags: Yup.array().of(Yup.string().min(1, 'tag must not be empty')),
@@ -658,11 +667,15 @@ const itemSchema = Yup.object({
     is: (type) => type === 'grpc-request',
     then: grpcRequestSchema.required('request is required when item-type is grpc-request'),
     otherwise: Yup.mixed().when('type', {
+      is: (type) => type === 'script-request',
+      then: scriptRequestSchema.required('request is required when item-type is script-request'),
+      otherwise: Yup.mixed().when('type', {
       is: (type) => type === 'ws-request',
       then: wsRequestSchema.required('request is required when item-type is ws-request'),
       otherwise: requestSchema.when('type', {
         is: (type) => ['http-request', 'graphql-request'].includes(type),
         then: (schema) => schema.required('request is required when item-type is request')
+      })
       })
     })
   }),

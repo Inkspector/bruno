@@ -10,7 +10,8 @@ export type ItemType
     | 'js'
     | 'app'
     | 'grpc-request'
-    | 'ws-request';
+    | 'ws-request'
+    | 'script-request';
 
 export interface HttpItemSettings {
   encodeUrl?: boolean | null;

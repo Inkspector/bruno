@@ -41,6 +41,9 @@ export const parseBruRequest = (data: string | any, parsed: boolean = false): an
       case 'ws':
         requestType = 'ws-request';
         break;
+      case 'script':
+        requestType = 'script-request';
+        break;
       default:
         requestType = 'http-request';
     }
@@ -50,6 +53,7 @@ export const parseBruRequest = (data: string | any, parsed: boolean = false): an
     const urlPath: Record<typeof requestType, string> = {
       'grpc-request': 'grpc.url',
       'ws-request': 'ws.url',
+      'script-request': 'scriptRequest.path',
       'default': 'http.url'
     };
 
@@ -111,6 +115,10 @@ export const parseBruRequest = (data: string | any, parsed: boolean = false): an
           }
         ])
       });
+    } else if (requestType === 'script-request') {
+      transformedJson.request.method = 'SCRIPT';
+      transformedJson.request.args = _.get(json, 'scriptRequest.args', []);
+      transformedJson.request.env = _.get(json, 'scriptRequest.env', []);
     } else {
       // For HTTP and GraphQL
       (transformedJson.request as any).params = _.get(json, 'params', []);
@@ -165,6 +173,9 @@ export const stringifyBruRequest = (json: any): string => {
         break;
       case 'ws-request':
         type = 'ws';
+        break;
+      case 'script-request':
+        type = 'script';
         break;
       default:
         type = 'http';
@@ -225,7 +236,6 @@ export const stringifyBruRequest = (json: any): string => {
         auth: _.get(json, 'request.auth.mode', 'none'),
         body: _.get(json, 'request.body.mode', 'ws')
       };
-
       bruJson.body = _.get(json, 'request.body', {
         mode: 'ws',
         ws: _.get(json, 'request.body.ws', [
@@ -235,6 +245,12 @@ export const stringifyBruRequest = (json: any): string => {
           }
         ])
       });
+    } else if (type === 'script') {
+      bruJson.scriptRequest = {
+        path: _.get(json, 'request.url'),
+        args: _.get(json, 'request.args', []),
+        env: _.get(json, 'request.env', [])
+      };
     }
 
     // Common fields for all request types

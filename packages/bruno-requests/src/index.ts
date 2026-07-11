@@ -16,3 +16,5 @@ export type { PacWrapper, GetPacResolverParams } from './utils/pac-resolver';
 export * as scripting from './scripting';
 
 export { makeAxiosInstance, getSystemProxy } from './network';
+export { executeScript } from './script';
+export type { ScriptExecution } from './script';

@@ -998,6 +998,7 @@ export const collectionsSlice = createSlice({
             item.draft = cloneDeep(item);
           }
           item.draft.request.url = action.payload.url;
+          if (item.type === 'script-request') return;
           item.draft.request.params = item?.draft?.request?.params ?? [];
           item.request.params = item?.request?.params ?? [];
 
@@ -1055,6 +1056,15 @@ export const collectionsSlice = createSlice({
           // we however are also storing the full url (with params) in the url itself
           item.draft.request.params = concat(urlQueryParams, newPathParams, disabledQueryParams, oldPathParams);
         }
+      }
+    },
+    updateScriptRequestConfig: (state, action) => {
+      const collection = findCollectionByUid(state.collections, action.payload.collectionUid);
+      const item = collection && findItemInCollection(collection, action.payload.itemUid);
+      if (item?.type === 'script-request') {
+        if (!item.draft) item.draft = cloneDeep(item);
+        item.draft.request.args = action.payload.args;
+        item.draft.request.env = action.payload.env;
       }
     },
     updateItemSettings: (state, action) => {
@@ -3947,6 +3957,7 @@ export const {
   expandCollection,
   toggleCollectionItem,
   requestUrlChanged,
+  updateScriptRequestConfig,
   updateItemSettings,
   updateAuth,
   addQueryParam,

@@ -5,7 +5,7 @@ import { newHttpRequest, newGrpcRequest, newWsRequest } from 'providers/ReduxSto
 import { generateUniqueRequestName } from 'utils/collections';
 import { sanitizeName } from 'utils/common/regex';
 import toast from 'react-hot-toast';
-import { IconApi, IconBrandGraphql, IconPlugConnected, IconCode, IconPlus } from '@tabler/icons';
+import { IconApi, IconBrandGraphql, IconPlugConnected, IconCode, IconPlus, IconTerminal2 } from '@tabler/icons';
 import ActionIcon from 'ui/ActionIcon';
 
 const CreateUntitledRequest = ({ collectionUid, itemUid = null, onRequestCreated, placement = 'bottom' }) => {
@@ -105,6 +105,28 @@ const CreateUntitledRequest = ({ collectionUid, itemUid = null, onRequestCreated
       .catch((err) => toast.error(err ? err.message : 'An error occurred while adding the request'));
   }, [dispatch, collection, itemUid, onRequestCreated]);
 
+  const handleCreateScriptRequest = useCallback(async () => {
+    const uniqueName = await generateUniqueRequestName(collection, 'Untitled', itemUid);
+    const filename = sanitizeName(uniqueName);
+
+    dispatch(newHttpRequest({
+      requestName: uniqueName,
+      filename: sanitizeName(uniqueName),
+      requestType: 'script-request',
+      requestUrl: '',
+      requestMethod: 'SCRIPT',
+      collectionUid: collection.uid,
+      itemUid,
+      args: [],
+      env: [] })
+    )
+      .then(() => {
+        toast.success('New script created!');
+        onRequestCreated?.();
+      })
+      .catch((err) => toast.error(err ? err.message : 'An error occurred while adding the script'));
+  }, [dispatch, collection, itemUid, onRequestCreated]);
+
   const menuItems = useMemo(() => [
     {
       id: 'http',
@@ -129,8 +151,14 @@ const CreateUntitledRequest = ({ collectionUid, itemUid = null, onRequestCreated
       label: 'gRPC',
       leftSection: <IconCode size={16} strokeWidth={2} />,
       onClick: handleCreateGrpcRequest
+    },
+    {
+      id: 'script',
+      label: 'Script',
+      leftSection: <IconTerminal2 size={16} strokeWidth={2} />,
+      onClick: handleCreateScriptRequest
     }
-  ], [handleCreateHttpRequest, handleCreateGraphQLRequest, handleCreateWebSocketRequest, handleCreateGrpcRequest]);
+  ], [handleCreateHttpRequest, handleCreateGraphQLRequest, handleCreateWebSocketRequest, handleCreateGrpcRequest, handleCreateScriptRequest]);
 
   if (!collection) {
     return null;

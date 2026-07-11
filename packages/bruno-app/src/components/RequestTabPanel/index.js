@@ -36,6 +36,8 @@ import ExampleNotFound from './ExampleNotFound';
 import WsQueryUrl from 'components/RequestPane/WsQueryUrl';
 import WSRequestPane from 'components/RequestPane/WSRequestPane';
 import WSResponsePane from 'components/ResponsePane/WsResponsePane';
+import ScriptRequestPane from 'components/RequestPane/ScriptRequestPane';
+import ScriptQueryUrl from 'components/RequestPane/ScriptQueryUrl';
 import { useTabPaneBoundaries } from 'hooks/useTabPaneBoundaries/index';
 import useKeybinding from 'hooks/useKeybinding';
 import { ScopedPersistenceProvider } from 'hooks/usePersistedState/PersistedScopeProvider';
@@ -73,7 +75,7 @@ const RequestTabPanel = () => {
   const isVerticalLayout = preferences?.layout?.responsePaneOrientation === 'vertical';
   const isConsoleOpen = useSelector((state) => state.logs.isConsoleOpen);
 
-  const isRequestTab = focusedTab && ['request', 'http-request', 'grpc-request', 'ws-request', 'graphql-request'].includes(focusedTab.type);
+  const isRequestTab = focusedTab && ['request', 'http-request', 'grpc-request', 'ws-request', 'graphql-request', 'script-request'].includes(focusedTab.type);
   useKeybinding('sendRequest', (e) => {
     e?.preventDefault?.();
     e?.stopPropagation?.();
@@ -445,6 +447,7 @@ const RequestTabPanel = () => {
   }
   const isGrpcRequest = item?.type === 'grpc-request';
   const isWsRequest = item?.type === 'ws-request';
+  const isScriptRequest = item?.type === 'script-request';
 
   if (focusedTab.type === 'collection-runner') {
     return <RunnerResults collection={collection} />;
@@ -530,6 +533,10 @@ const RequestTabPanel = () => {
       toast.error('Please enter a valid WebSocket URL');
       return;
     }
+    if (isScriptRequest && !request.url) {
+      toast.error('Please select a script file');
+      return;
+    }
     if (item.requestState !== 'sending' && item.requestState !== 'queued') {
       dispatch(sendRequest(item, collection.uid)).catch((err) =>
         toast.custom((t) => <NetworkError onClose={() => toast.dismiss(t.id)} />, {
@@ -579,6 +586,9 @@ const RequestTabPanel = () => {
     if (isWsRequest) {
       return <WsQueryUrl item={item} collection={collection} handleRun={handleRun} />;
     }
+    if (isScriptRequest) {
+      return <ScriptQueryUrl item={item} collection={collection} handleRun={handleRun} />;
+    }
     return <QueryUrl item={item} collection={collection} handleRun={handleRun} />;
   };
 
@@ -600,6 +610,8 @@ const RequestTabPanel = () => {
         return <GrpcRequestPane item={item} collection={collection} handleRun={handleRun} />;
       case 'ws-request':
         return <WSRequestPane item={item} collection={collection} handleRun={handleRun} />;
+      case 'script-request':
+        return <ScriptRequestPane item={item} collection={collection} />;
       default:
         return null;
     }

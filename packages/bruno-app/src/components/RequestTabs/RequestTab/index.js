@@ -52,7 +52,8 @@ const RequestTab = ({ tab, collection, tabIndex, collectionRequestTabs, folderUi
       || tab.type === 'http-request'
       || tab.type === 'graphql-request'
       || tab.type === 'grpc-request'
-      || tab.type === 'ws-request';
+      || tab.type === 'ws-request'
+      || tab.type === 'script-request';
     const shouldSyncUid = isRequestType || tab.type === 'folder-settings';
 
     if (!shouldSyncUid || !tab.pathname || !item?.uid || tab.uid === item.uid) {
@@ -69,6 +70,8 @@ const RequestTab = ({ tab, collection, tabIndex, collectionRequestTabs, folderUi
         return 'gRPC';
       case 'ws-request':
         return 'WS';
+      case 'script-request':
+        return 'Script';
       case 'graphql-request':
         return 'GQL';
       default:
@@ -209,7 +212,7 @@ const RequestTab = ({ tab, collection, tabIndex, collectionRequestTabs, folderUi
 
   // Close tab shortcut — draft-aware, only active for the focused tab
   useKeybinding('closeTab', () => {
-    if (tab.type === 'request' || tab.type === 'http-request' || tab.type === 'grpc-request' || tab.type === 'ws-request' || tab.type === 'graphql-request') {
+    if (tab.type === 'request' || tab.type === 'http-request' || tab.type === 'grpc-request' || tab.type === 'ws-request' || tab.type === 'graphql-request' || tab.type === 'script-request') {
       if (hasChanges) {
         setShowConfirmClose(true);
       } else {

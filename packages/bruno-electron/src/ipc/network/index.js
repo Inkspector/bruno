@@ -1,7 +1,7 @@
 const https = require('https');
 const axios = require('axios');
 const path = require('path');
-const { applyOAuth1ToRequest } = require('@usebruno/requests');
+const { applyOAuth1ToRequest, executeScript } = require('@usebruno/requests');
 const { buildScriptedEntry } = require('@usebruno/requests').scripting;
 const qs = require('qs');
 const decomment = require('decomment');
@@ -1371,6 +1371,32 @@ const registerNetworkIpc = (mainWindow) => {
     return response;
   });
 
+  ipcMain.handle('send-script-request', async (event, item, collection, environment, runtimeVariables) => {
+    const request = item.draft?.request || item.request;
+    if (!request?.url) throw new Error('Please select a script file');
+    const envVars = getEnvVars(environment);
+    const variables = { ...envVars, ...(collection.runtimeVariables || {}), ...(runtimeVariables || {}) };
+    const interpolate = (value) => interpolateString(String(value ?? ''), variables);
+    const args = (request.args || []).filter((arg) => arg.enabled !== false).map((arg) => interpolate(arg.value));
+    const scriptEnv = (request.env || []).filter((entry) => entry.enabled !== false && entry.name)
+      .reduce((result, entry) => ({ ...result, [interpolate(entry.name)]: interpolate(entry.value) }), {});
+    const startedAt = Date.now();
+    const result = await executeScript({ filePath: interpolate(request.url), args, env: { ...process.env, ...scriptEnv }, cwd: collection.pathname });
+    const duration = Date.now() - startedAt;
+    const output = result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout;
+    return {
+      status: result.exitCode === 0 ? 200 : result.exitCode,
+      statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+      data: output,
+      dataBuffer: Buffer.from(output).toString('base64'),
+      size: Buffer.byteLength(output),
+      duration,
+      isError: result.exitCode !== 0,
+      requestSent: { url: request.url, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }
+    };
+  });
+
   ipcMain.handle('clear-oauth2-cache', async (event, uid, url, credentialsId) => {
     return new Promise((resolve, reject) => {
       try {
@@ -1643,6 +1669,25 @@ const registerNetworkIpc = (mainWindow) => {
               },
               ...eventData
             });
+            currentRequestIndex++;
+            continue;
+          }
+
+          if (item.type === 'script-request') {
+            const scriptRequest = item.draft?.request || item.request;
+            const startedAt = Date.now();
+            try {
+              const scriptEnv = (scriptRequest.env || []).filter((entry) => entry.enabled !== false && entry.name)
+                .reduce((result, entry) => ({ ...result, [entry.name]: entry.value || '' }), {});
+              const args = (scriptRequest.args || []).filter((arg) => arg.enabled !== false).map((arg) => arg.value || '');
+              const result = await executeScript({ filePath: scriptRequest.url, args, env: { ...process.env, ...scriptEnv }, cwd: collectionPath });
+              const output = result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout;
+              const responseReceived = { status: result.exitCode === 0 ? 200 : result.exitCode, statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`, headers: { 'content-type': 'text/plain; charset=utf-8' }, data: output, dataBuffer: Buffer.from(output).toString('base64'), size: Buffer.byteLength(output), duration: Date.now() - startedAt };
+              mainWindow.webContents.send('main:run-folder-event', { type: 'request-sent', requestSent: { url: scriptRequest.url, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }, ...eventData });
+              mainWindow.webContents.send('main:run-folder-event', { type: 'response-received', responseReceived, ...(result.exitCode ? { error: responseReceived.statusText } : {}), ...eventData });
+            } catch (error) {
+              mainWindow.webContents.send('main:run-folder-event', { type: 'runner-request-error', error: error.message, ...eventData });
+            }
             currentRequestIndex++;
             continue;
           }

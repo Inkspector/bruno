@@ -740,6 +740,8 @@ export const transformRequestToSaveToFilesystem = (item) => {
     request: {
       method: _item.request.method,
       url: _item.request.url,
+      args: _item.request.args,
+      env: _item.request.env,
       params: [],
       headers: [],
       auth: _item.request.auth,
@@ -756,6 +758,11 @@ export const transformRequestToSaveToFilesystem = (item) => {
     itemToSave.request.methodType = _item.request.methodType;
     itemToSave.request.protoPath = _item.request.protoPath;
     delete itemToSave.request.params;
+  }
+
+  if (_item.type !== 'script-request') {
+    delete itemToSave.request.args;
+    delete itemToSave.request.env;
   }
 
   if (_item.type === 'ws-request') {
@@ -906,7 +913,7 @@ export const deleteItemInCollectionByPathname = (pathname, collection) => {
 };
 
 export const isItemARequest = (item) => {
-  return item.hasOwnProperty('request') && ['http-request', 'graphql-request', 'grpc-request', 'ws-request'].includes(item.type) && !item.items;
+  return item.hasOwnProperty('request') && ['http-request', 'graphql-request', 'grpc-request', 'ws-request', 'script-request'].includes(item.type) && !item.items;
 };
 
 export const isItemAFolder = (item) => {

@@ -100,6 +100,9 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
     if (collectionPresets.requestType === 'ws') {
       return 'ws-request';
     }
+    if (collectionPresets.requestType === 'script') {
+      return 'script-request';
+    }
 
     return 'http-request';
   };
@@ -384,6 +387,10 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
                       WebSocket
                     </label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <input type="radio" id="script-request" name="requestType" value="script-request" checked={formik.values.requestType === 'script-request'} onChange={formik.handleChange} data-testid="script-request" />
+                    <label htmlFor="script-request" className="ml-1 cursor-pointer select-none">Script</label>
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -493,10 +500,10 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
               <>
                 <div className="mt-4">
                   <label htmlFor="request-url" className="block font-medium">
-                    URL
+                    {formik.values.requestType === 'script-request' ? 'Script file' : 'URL'}
                   </label>
                   <div className="flex items-center mt-2 ">
-                    {!['grpc-request', 'ws-request'].includes(formik.values.requestType) ? (
+                    {!['grpc-request', 'ws-request', 'script-request'].includes(formik.values.requestType) ? (
                       <div className="flex items-center h-full method-selector-container">
                         <HttpMethodSelector
                           method={formik.values.requestMethod}
@@ -513,7 +520,7 @@ const NewRequest = ({ collectionUid, item, isEphemeral, onClose }) => {
                       <SingleLineEditor
                         onRun={() => formik.handleSubmit()}
                         onPaste={handlePaste}
-                        placeholder="Request URL"
+                        placeholder={formik.values.requestType === 'script-request' ? 'Path to script' : 'Request URL'}
                         value={formik.values.requestUrl || ''}
                         theme={storedTheme}
                         onChange={(value) => {

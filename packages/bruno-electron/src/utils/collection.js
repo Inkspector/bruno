@@ -543,7 +543,8 @@ const parseYmlFileMeta = (data) => {
       http: 'http-request',
       graphql: 'graphql-request',
       grpc: 'grpc-request',
-      ws: 'ws-request'
+      ws: 'ws-request',
+      script: 'script-request'
     };
     requestType = typeMap[requestType] || 'http-request';
 
@@ -661,6 +662,8 @@ const transformRequestToSaveToFilesystem = (item) => {
     request: {
       method: _item.request.method,
       url: _item.request.url,
+      args: _item.request.args,
+      env: _item.request.env,
       params: [],
       headers: [],
       auth: _item.request.auth,
@@ -677,6 +680,11 @@ const transformRequestToSaveToFilesystem = (item) => {
     itemToSave.request.methodType = _item.request.methodType;
     itemToSave.request.protoPath = _item.request.protoPath;
     delete itemToSave.request.params;
+  }
+
+  if (_item.type !== 'script-request') {
+    delete itemToSave.request.args;
+    delete itemToSave.request.env;
   }
 
   // Only process params for non-gRPC requests

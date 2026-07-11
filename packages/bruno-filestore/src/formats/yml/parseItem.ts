@@ -11,6 +11,7 @@ import parseGrpcRequest from './items/parseGrpcRequest';
 import parseWebsocketRequest from './items/parseWebsocketRequest';
 import parseScript from './items/parseScript';
 import parseApp, { type AppFile } from './items/parseApp';
+import parseScriptRequest from './items/parseScriptRequest';
 
 // Helper to get the type from an item (now in info block)
 const getItemType = (item: Item): string | undefined => {
@@ -86,7 +87,7 @@ const parseItem = (ymlString: string): BrunoItem => {
         return parseWebsocketRequest(ocItem as WebSocketRequest);
 
       case 'script':
-        return parseScript(ocItem as ScriptFile);
+        return (ocItem as any).script?.path !== undefined ? parseScriptRequest(ocItem) : parseScript(ocItem as ScriptFile);
 
       case 'app':
         return parseApp(ocItem as unknown as AppFile);

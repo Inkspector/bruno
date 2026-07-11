@@ -672,6 +672,7 @@ export const sendRequest = (item, collectionUid) => (dispatch, getState) => {
     const environment = findEnvironmentInCollection(collectionCopy, collectionCopy.activeEnvironmentUid);
     const isGrpcRequest = itemCopy.type === 'grpc-request';
     const isWsRequest = itemCopy.type === 'ws-request';
+    const isScriptRequest = itemCopy.type === 'script-request';
     if (isGrpcRequest) {
       sendGrpcRequest(itemCopy, collectionCopy, environment, collectionCopy.runtimeVariables)
         .then(resolve)
@@ -685,6 +686,17 @@ export const sendRequest = (item, collectionUid) => (dispatch, getState) => {
         .then(resolve)
         .catch((err) => {
           toast.error(err.message);
+        });
+    } else if (isScriptRequest) {
+      window.ipcRenderer.invoke('send-script-request', itemCopy, collectionCopy, environment, collectionCopy.runtimeVariables)
+        .then((response) => {
+          const { requestSent, ...responseData } = response;
+          return dispatch(responseReceived({ itemUid, collectionUid, response: responseData, requestSent }));
+        })
+        .then(resolve)
+        .catch((err) => {
+          dispatch(responseReceived({ itemUid, collectionUid, response: { status: 'Error', isError: true, error: err.message, size: 0, duration: 0 } }));
+          reject(err);
         });
     } else {
       sendNetworkRequest(itemCopy, collectionCopy, environment, collectionCopy.runtimeVariables)
@@ -1384,7 +1396,9 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
     body,
     auth,
     settings,
-    isTransient = false
+    isTransient = false,
+    args,
+    env
   } = params;
 
   return new Promise((resolve, reject) => {
@@ -1421,6 +1435,7 @@ export const newHttpRequest = (params) => (dispatch, getState) => {
       request: {
         method: requestMethod,
         url: requestUrl,
+        ...(requestType === 'script-request' ? { args: args ?? [], env: env ?? [] } : {}),
         headers: headers ?? [],
         params,
         body: body ?? {

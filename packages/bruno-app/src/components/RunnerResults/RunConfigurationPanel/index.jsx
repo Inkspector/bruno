@@ -35,6 +35,7 @@ const ItemTypes = {
 const getMethodInfo = (item) => {
   const isGrpc = item.type === 'grpc-request';
   const isWS = item.type === 'ws-request';
+  const isScript = item.type === 'script-request';
   const isGraphQL = item.type === 'graphql-request';
 
   let methodText;
@@ -46,6 +47,9 @@ const getMethodInfo = (item) => {
   } else if (isWS) {
     methodText = 'WS';
     methodClass = 'method-ws';
+  } else if (isScript) {
+    methodText = 'RUN';
+    methodClass = 'method-script';
   } else if (isGraphQL) {
     methodText = 'GQL';
     methodClass = 'method-gql';
