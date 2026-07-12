@@ -160,7 +160,7 @@ const TimelineItem = ({
             <Status statusCode={displayedCode} statusKind={isScriptRequest ? (displayedCode === 'OK' ? 'success' : 'error') : undefined} />
           </div>
           <div className="tl-col-method">
-            <Method method={method} />
+            <Method method={isScriptRequest ? 'CMD' : method} />
           </div>
           <div className="tl-col-url" title={url} data-testid="timeline-url">{url}</div>
           <div className="tl-col-badge">
@@ -177,7 +177,7 @@ const TimelineItem = ({
           <div className="tl-detail" data-testid="timeline-detail">
             <div className="tl-header">
               <div className="tl-header-url" title={`${method || ''} ${url}`}>
-                <span className="tl-header-url-method">{method}</span>
+                <span className="tl-header-url-method">{isScriptRequest ? 'CMD' : method}</span>
                 <span className="tl-header-url-text">{url}</span>
               </div>
               {sourceFile && (

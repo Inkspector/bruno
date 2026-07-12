@@ -5,7 +5,7 @@ const Method = ({ method }) => {
   const { theme } = useTheme();
 
   const methodColor = useMemo(() => {
-    const methodLower = method?.toLowerCase();
+    const methodLower = method?.toLowerCase() == 'cmd' ? 'script' : method?.toLowerCase();
     return theme.request.methods[methodLower] || theme.request[methodLower] || theme.text;
   }, [method, theme]);
 
