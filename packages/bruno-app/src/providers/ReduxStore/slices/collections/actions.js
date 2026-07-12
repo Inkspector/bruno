@@ -695,6 +695,9 @@ export const sendRequest = (item, collectionUid) => (dispatch, getState) => {
         })
         .then(resolve)
         .catch((err) => {
+          if (err?.message?.includes('Request cancelled')) {
+            return resolve();
+          }
           dispatch(responseReceived({ itemUid, collectionUid, response: { status: 'Error', isError: true, error: err.message, size: 0, duration: 0 } }));
           reject(err);
         });

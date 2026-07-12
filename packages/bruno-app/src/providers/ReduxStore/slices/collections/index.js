@@ -573,7 +573,15 @@ export const collectionsSlice = createSlice({
       if (collection) {
         const item = findItemInCollection(collection, itemUid);
         if (item) {
-          if (item.response?.stream?.running) {
+          if (item.type === 'script-request' && item.response?.stream?.running) {
+            item.response.stream.running = false;
+            item.response.status = 1;
+            item.response.statusText = 'Cancelled';
+            item.response.isError = true;
+            const startTimestamp = item.requestSent?.timestamp;
+            item.response.duration = startTimestamp ? Date.now() - startTimestamp : item.response.duration;
+            item.requestState = 'received';
+          } else if (item.response?.stream?.running) {
             item.response.stream.running = null;
 
             const startTimestamp = item.requestSent.timestamp;
@@ -3664,10 +3672,10 @@ export const collectionsSlice = createSlice({
       }
     },
     scriptStreamDataReceived: (state, action) => {
-      const { itemUid, collectionUid, data } = action.payload;
+      const { itemUid, collectionUid, requestUid, data } = action.payload;
       const collection = findCollectionByUid(state.collections, collectionUid);
       const item = collection && findItemInCollection(collection, itemUid);
-      if (!item || typeof data !== 'string') return;
+      if (!item || item.requestUid !== requestUid || item.requestState !== 'sending' || typeof data !== 'string') return;
 
       if (!item.response || !item.response.stream?.running) {
         item.response = {
@@ -3690,12 +3698,13 @@ export const collectionsSlice = createSlice({
       item.response.duration = item.requestStartTime ? Date.now() - item.requestStartTime : item.response.duration;
     },
     scriptRequestStarted: (state, action) => {
-      const { itemUid, collectionUid, requestSent } = action.payload;
+      const { itemUid, collectionUid, requestUid, requestSent, cancelTokenUid } = action.payload;
       const collection = findCollectionByUid(state.collections, collectionUid);
       const item = collection && findItemInCollection(collection, itemUid);
-      if (!item) return;
+      if (!item || item.requestUid !== requestUid) return;
       item.requestSent = requestSent;
       item.requestState = 'sending';
+      item.cancelTokenUid = cancelTokenUid;
     },
     addRequestTag: (state, action) => {
       const { tag, collectionUid, itemUid } = action.payload;

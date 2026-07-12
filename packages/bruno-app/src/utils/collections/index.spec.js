@@ -85,6 +85,26 @@ describe('transformRequestToSaveToFilesystem', () => {
     expect(transformed.request.params[0].annotations).toEqual([{ name: 'param-note', value: 'keep me' }]);
     expect(transformed.request.headers[0].annotations).toEqual([{ name: 'header-note', value: 'keep me' }]);
   });
+
+  it('preserves script request documentation from the draft', () => {
+    const item = {
+      uid: 'scriptuid1234567890123',
+      type: 'script-request',
+      name: 'Documented Script',
+      seq: 1,
+      settings: {},
+      tags: [],
+      examples: [],
+      request: { method: 'SCRIPT', url: './script.sh', args: [], env: [], body: { mode: 'none' }, docs: 'old docs' },
+      draft: {
+        request: { method: 'SCRIPT', url: './script.sh', args: [], env: [], body: { mode: 'none' }, docs: 'new docs' }
+      }
+    };
+
+    const transformed = transformRequestToSaveToFilesystem(item);
+
+    expect(transformed.request.docs).toBe('new docs');
+  });
 });
 
 describe('getCollectionItemCounts', () => {

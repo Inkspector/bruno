@@ -1405,28 +1405,43 @@ const registerNetworkIpc = (mainWindow) => {
 
     const startedAt = Date.now();
     const filePath = interpolate(request.url);
+    const cancelTokenUid = uuid();
+    const abortController = new AbortController();
+    saveCancelToken(cancelTokenUid, abortController);
     mainWindow.webContents.send('main:script-request-started', {
       collectionUid: collection.uid,
       itemUid: item.uid,
+      requestUid: item.requestUid,
+      cancelTokenUid,
       requestSent: { url: filePath, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }
     });
     let seq = 0;
-    const sendChunk = (stream, data) => mainWindow.webContents.send('main:script-stream-data', {
-      collectionUid: collection.uid,
-      itemUid: item.uid,
-      seq: seq++,
-      stream,
-      data,
-      timestamp: Date.now()
-    });
-    const result = await executeScript({
-      filePath,
-      args,
-      env: { ...process.env, ...scriptEnv },
-      cwd: collection.pathname,
-      onStdout: (data) => sendChunk('stdout', data),
-      onStderr: (data) => sendChunk('stderr', data)
-    });
+    const sendChunk = (stream, data) => {
+      if (abortController.signal.aborted) return;
+      mainWindow.webContents.send('main:script-stream-data', {
+        collectionUid: collection.uid,
+        itemUid: item.uid,
+        requestUid: item.requestUid,
+        seq: seq++,
+        stream,
+        data,
+        timestamp: Date.now()
+      });
+    };
+    let result;
+    try {
+      result = await executeScript({
+        filePath,
+        args,
+        env: { ...process.env, ...scriptEnv },
+        cwd: collection.pathname,
+        signal: abortController.signal,
+        onStdout: (data) => sendChunk('stdout', data),
+        onStderr: (data) => sendChunk('stderr', data)
+      });
+    } finally {
+      deleteCancelToken(cancelTokenUid);
+    }
     const duration = Date.now() - startedAt;
     const output = result.output ?? (result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout);
 
@@ -1748,7 +1763,13 @@ const registerNetworkIpc = (mainWindow) => {
                 .filter((arg) => arg.enabled !== false)
                 .map((arg) => interpolate(arg.value));
               const filePath = interpolate(scriptRequest.url);
-              const result = await executeScript({ filePath, args, env: { ...process.env, ...scriptEnv }, cwd: collectionPath });
+              const result = await executeScript({
+                filePath,
+                args,
+                env: { ...process.env, ...scriptEnv },
+                cwd: collectionPath,
+                signal: abortController.signal
+              });
               const output = result.output ?? (result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout);
               const responseReceived = { status: result.exitCode === 0 ? 200 : result.exitCode, statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`, headers: { 'content-type': 'text/plain; charset=utf-8' }, data: output, dataBuffer: Buffer.from(output).toString('base64'), size: Buffer.byteLength(output), duration: Date.now() - startedAt };
               mainWindow.webContents.send('main:run-folder-event', { type: 'request-sent', requestSent: { url: filePath, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }, ...eventData });

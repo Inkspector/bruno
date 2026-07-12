@@ -18,4 +18,17 @@ describe('executeScript streaming', () => {
     expect(result.output).toContain('stdout');
     expect(result.output).toContain('stderr');
   });
+
+  it('terminates the child process when aborted', async () => {
+    const controller = new AbortController();
+    const execution = executeScript({
+      filePath: process.execPath,
+      args: ['-e', 'setInterval(() => {}, 1000)'],
+      signal: controller.signal
+    });
+
+    controller.abort();
+
+    await expect(execution).rejects.toThrow('Request cancelled');
+  });
 });

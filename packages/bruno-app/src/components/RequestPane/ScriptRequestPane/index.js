@@ -74,7 +74,7 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
         return <ScriptArgs item={item} collection={collection} />;
       }
     }
-  }, [requestPaneTab, item, collection, handleRun]);
+  }, [requestPaneTab, item, collection, handleRun, docs]);
 
   if (!activeTabUid || !focusedTab?.uid || !requestPaneTab) {
     return <div className="pb-4 px-4">An error occurred!</div>;

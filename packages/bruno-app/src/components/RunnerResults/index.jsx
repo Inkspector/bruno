@@ -7,6 +7,7 @@ import { resetCollectionRunner } from 'providers/ReduxStore/slices/collections';
 import { findItemInCollection, getTotalRequestCountInCollection, areItemsLoading } from 'utils/collections';
 import { IconRefresh, IconCircleCheck, IconCircleX, IconCircleOff, IconCheck, IconX, IconRun, IconExternalLink } from '@tabler/icons';
 import ResponsePane from './ResponsePane';
+import ScriptResponsePane from './ScriptResponsePane';
 import StyledWrapper from './StyledWrapper';
 import RunnerTags from './RunnerTags/index';
 import RunConfigurationPanel from './RunConfigurationPanel';
@@ -545,7 +546,9 @@ export default function RunnerResults({ collection }) {
                   <IconX size={16} strokeWidth={1.5} />
                 </button>
               </div>
-              <ResponsePane item={selectedItem} collection={collection} />
+              {selectedItem.type === 'script-request'
+                ? <ScriptResponsePane item={selectedItem} collection={collection} />
+                : <ResponsePane item={selectedItem} collection={collection} />}
             </div>
           </div>
         ) : (
