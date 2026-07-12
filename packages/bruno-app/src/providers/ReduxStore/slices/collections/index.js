@@ -3281,6 +3281,7 @@ export const collectionsSlice = createSlice({
         if (type === 'testrun-ended') {
           const info = collection.runnerResult.info;
           info.status = action.payload.cancelled ? 'cancelled' : 'ended';
+          info.cancelTokenUid = null;
           if (action.payload.cancelled) {
             collection.runnerResult.items.forEach((item) => {
               if (item.status === 'queued' || item.status === 'running') {

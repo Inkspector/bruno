@@ -26,7 +26,7 @@ const getTestStatus = (results) => {
 };
 
 const allTestsPassed = (item) => {
-  return item.status !== 'error'
+  return item.status === 'completed'
     && item.testStatus === 'pass'
     && item.assertionStatus === 'pass'
     && item.preRequestTestStatus === 'pass'
@@ -35,6 +35,7 @@ const allTestsPassed = (item) => {
 
 const anyTestFailed = (item) => {
   return item.status === 'error'
+    || item.status === 'cancelled'
     || item.testStatus === 'fail'
     || item.assertionStatus === 'fail'
     || item.preRequestTestStatus === 'fail'
@@ -110,7 +111,7 @@ export default function RunnerResults({ collection }) {
         displayName: getDisplayName(collection.pathname, info.pathname, info.name),
         tags: [...(info.request?.tags || [])].sort()
       };
-      if (newItem.status !== 'error' && newItem.status !== 'skipped' && newItem.status !== 'running') {
+      if (newItem.status === 'completed') {
         newItem.testStatus = getTestStatus(newItem.testResults);
         newItem.assertionStatus = getTestStatus(newItem.assertionResults);
         newItem.preRequestTestStatus = getTestStatus(newItem.preRequestTestResults);
@@ -327,7 +328,7 @@ export default function RunnerResults({ collection }) {
           </div>
         </div>
 
-        {runnerInfo.status !== 'ended' && runnerInfo.cancelTokenUid ? (
+        {!['ended', 'cancelled'].includes(runnerInfo.status) && runnerInfo.cancelTokenUid ? (
           <div className="flex items-center flex-shrink-0">
             <Button
               type="button"
@@ -339,7 +340,7 @@ export default function RunnerResults({ collection }) {
               Cancel Execution
             </Button>
           </div>
-        ) : runnerInfo.status === 'ended' ? (
+        ) : ['ended', 'cancelled'].includes(runnerInfo.status) ? (
           <div className="flex items-center gap-3 flex-shrink-0">
             <Button
               type="button"
@@ -399,7 +400,7 @@ export default function RunnerResults({ collection }) {
                         {allTestsPassed(item)
                           ? <IconCircleCheck className="test-success" size={20} strokeWidth={1.5} />
                           : null}
-                        {item.status === 'skipped' || item.status === 'cancelled'
+                        {item.status === 'skipped'
                           ? <IconCircleOff className="skipped-request" size={20} strokeWidth={1.5} />
                           : null}
                         {anyTestFailed(item)

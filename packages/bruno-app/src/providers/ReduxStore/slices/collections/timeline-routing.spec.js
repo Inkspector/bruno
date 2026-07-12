@@ -139,6 +139,7 @@ describe('runFolderEvent — runner flow', () => {
     }));
 
     expect(state.collections[0].runnerResult.info.status).toBe('cancelled');
+    expect(state.collections[0].runnerResult.info.cancelTokenUid).toBeNull();
     expect(state.collections[0].runnerResult.items[0]).toMatchObject({
       status: 'cancelled',
       error: 'Runner execution cancelled'
