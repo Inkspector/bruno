@@ -1373,17 +1373,41 @@ const registerNetworkIpc = (mainWindow) => {
 
   ipcMain.handle('send-script-request', async (event, item, collection, environment, runtimeVariables) => {
     const request = item.draft?.request || item.request;
+    const requestTreePath = getTreePathFromCollectionToItem(collection, item);
+    mergeVars(collection, request, requestTreePath || []);
     if (!request?.url) throw new Error('Please select a script file');
     const envVars = getEnvVars(environment);
-    const variables = { ...envVars, ...(collection.runtimeVariables || {}), ...(runtimeVariables || {}) };
-    const interpolate = (value) => interpolateString(String(value ?? ''), variables);
-    const args = (request.args || []).filter((arg) => arg.enabled !== false).map((arg) => interpolate(arg.value));
-    const scriptEnv = (request.env || []).filter((entry) => entry.enabled !== false && entry.name)
+    const processEnvVars = getProcessEnvVars(collection?.uid);
+    const collectionRuntimeVars = collection?.runtimeVariables || {};
+    const providedRuntimeVars = runtimeVariables || {};
+
+    // Build interpolation options so interpolateString can resolve {{var}} from all scopes
+    const interpolationOptions = {
+      globalEnvironmentVariables: collection?.globalEnvironmentVariables || {},
+      collectionVariables: request.collectionVariables || {},
+      envVars,
+      folderVariables: request.folderVariables || {},
+      requestVariables: request.requestVariables || {},
+      runtimeVariables: { ...collectionRuntimeVars, ...providedRuntimeVars, ...request.collectionEnvironmentVars },
+      processEnvVars,
+      promptVariables: collection?.promptVariables || {}
+    };
+
+    const interpolate = (value) => interpolateString(String(value ?? ''), interpolationOptions);
+
+    const args = (request.args || [])
+      .filter((arg) => arg.enabled !== false)
+      .map((arg) => interpolate(arg.value));
+
+    const scriptEnv = (request.env || [])
+      .filter((entry) => entry.enabled !== false && entry.name)
       .reduce((result, entry) => ({ ...result, [interpolate(entry.name)]: interpolate(entry.value) }), {});
+
     const startedAt = Date.now();
     const result = await executeScript({ filePath: interpolate(request.url), args, env: { ...process.env, ...scriptEnv }, cwd: collection.pathname });
     const duration = Date.now() - startedAt;
     const output = result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout;
+
     return {
       status: result.exitCode === 0 ? 200 : result.exitCode,
       statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`,

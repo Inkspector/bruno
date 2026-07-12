@@ -13,6 +13,9 @@ fi
 COUNT="${PING_COUNT:-3}"
 FORMAT="${RESPONSE_TYPE:-RAW}"
 
+echo "count=$COUNT"
+echo "createdMissionId=${createdMissionId}"
+
 # Conversion en majuscules pour éviter les surprises de casse (raw -> RAW)
 FORMAT=$(echo "$FORMAT" | tr '[:lower:]' '[:upper:]')
 
