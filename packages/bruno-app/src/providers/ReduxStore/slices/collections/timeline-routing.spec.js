@@ -122,6 +122,29 @@ describe('runFolderEvent — runner flow', () => {
     return state;
   };
 
+  test('marks running runner items as cancelled when the run is cancelled', () => {
+    let state = seedRunner(makeInitialState());
+    state = reducer(state, runFolderEvent({
+      type: 'request-sent',
+      collectionUid: COLLECTION_UID,
+      folderUid: null,
+      itemUid: ITEM_UID,
+      requestSent: { method: 'SCRIPT', url: './script.sh' }
+    }));
+    state = reducer(state, runFolderEvent({
+      type: 'testrun-ended',
+      collectionUid: COLLECTION_UID,
+      folderUid: null,
+      cancelled: true
+    }));
+
+    expect(state.collections[0].runnerResult.info.status).toBe('cancelled');
+    expect(state.collections[0].runnerResult.items[0]).toMatchObject({
+      status: 'cancelled',
+      error: 'Runner execution cancelled'
+    });
+  });
+
   test('routes scripted-request onto runnerItem.scriptedRequestEntries (not collection.timeline)', () => {
     let state = seedRunner(makeInitialState());
     state = reducer(state, runFolderEvent({

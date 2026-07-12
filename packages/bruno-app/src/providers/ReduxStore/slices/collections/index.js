@@ -3280,7 +3280,15 @@ export const collectionsSlice = createSlice({
 
         if (type === 'testrun-ended') {
           const info = collection.runnerResult.info;
-          info.status = 'ended';
+          info.status = action.payload.cancelled ? 'cancelled' : 'ended';
+          if (action.payload.cancelled) {
+            collection.runnerResult.items.forEach((item) => {
+              if (item.status === 'queued' || item.status === 'running') {
+                item.status = 'cancelled';
+                item.error = 'Runner execution cancelled';
+              }
+            });
+          }
           if (action.payload.runCompletionTime) {
             info.runCompletionTime = action.payload.runCompletionTime;
           }
@@ -3346,6 +3354,15 @@ export const collectionsSlice = createSlice({
           if (item) {
             item.status = 'skipped';
             item.responseReceived = action.payload.responseReceived;
+          }
+        }
+
+        if (type === 'runner-request-error') {
+          const item = collection.runnerResult.items.findLast((i) => i.uid === request?.uid);
+          if (item) {
+            const cancelled = action.payload.error?.includes('Request cancelled');
+            item.status = cancelled ? 'cancelled' : 'error';
+            item.error = action.payload.error;
           }
         }
 

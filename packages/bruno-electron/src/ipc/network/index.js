@@ -2281,6 +2281,7 @@ const registerNetworkIpc = (mainWindow) => {
           collectionUid,
           folderUid,
           runCompletionTime: new Date().toISOString(),
+          cancelled: Boolean(error?.isCancel),
           error: error && !error.isCancel ? error : null
         });
       }

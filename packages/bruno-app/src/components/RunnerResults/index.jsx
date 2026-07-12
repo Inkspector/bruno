@@ -399,7 +399,7 @@ export default function RunnerResults({ collection }) {
                         {allTestsPassed(item)
                           ? <IconCircleCheck className="test-success" size={20} strokeWidth={1.5} />
                           : null}
-                        {item.status === 'skipped'
+                        {item.status === 'skipped' || item.status === 'cancelled'
                           ? <IconCircleOff className="skipped-request" size={20} strokeWidth={1.5} />
                           : null}
                         {anyTestFailed(item)
@@ -411,7 +411,7 @@ export default function RunnerResults({ collection }) {
                       >
                         {item.displayName}
                       </span>
-                      {item.status !== 'error' && item.status !== 'skipped' && item.status !== 'completed' ? (
+                      {item.status !== 'error' && item.status !== 'skipped' && item.status !== 'cancelled' && item.status !== 'completed' ? (
                         <IconRefresh className="animate-spin ml-1" size={18} strokeWidth={1.5} />
                       ) : item.responseReceived?.status ? (
                         <span className="text-xs link cursor-pointer" onClick={() => setSelectedItem(item)}>
@@ -430,7 +430,7 @@ export default function RunnerResults({ collection }) {
                         Tags: {item.tags.filter((t) => tags.include.includes(t)).join(', ')}
                       </div>
                     )}
-                    {item.status == 'error' ? <div className="error-message pl-8 pt-2 text-xs">{item.error}</div> : null}
+                    {item.status === 'error' || item.status === 'cancelled' ? <div className="error-message pl-8 pt-2 text-xs">{item.error}</div> : null}
 
                     <ul className="pl-8">
                       {item.preRequestTestResults
