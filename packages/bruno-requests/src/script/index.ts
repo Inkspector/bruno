@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import path from 'path';
+import { interpolate } from '@usebruno/common';
 
 export type ScriptExecution = {
   filePath: string;
@@ -9,6 +10,108 @@ export type ScriptExecution = {
   onStdout?: (data: string) => void;
   onStderr?: (data: string) => void;
   signal?: AbortSignal;
+};
+
+export type ScriptRequestExecution = {
+  request: any;
+  collectionPath: string;
+  globalEnvironmentVariables?: Record<string, any>;
+  collectionVariables?: Record<string, any>;
+  envVariables?: Record<string, any>;
+  folderVariables?: Record<string, any>;
+  requestVariables?: Record<string, any>;
+  runtimeVariables?: Record<string, any>;
+  processEnvVars?: Record<string, any>;
+  promptVariables?: Record<string, any>;
+  baseProcessEnv?: any;
+  signal?: AbortSignal;
+  onStdout?: (data: string) => void;
+  onStderr?: (data: string) => void;
+  onStart?: (requestSent: { url: string; method: string; headers: Record<string, string>; data: string[]; timestamp: number }) => void;
+};
+
+export const resolveScriptRequest = ({
+  request,
+  globalEnvironmentVariables = {},
+  collectionVariables = request?.collectionVariables || {},
+  envVariables = {},
+  folderVariables = request?.folderVariables || {},
+  requestVariables = request?.requestVariables || {},
+  runtimeVariables = {},
+  processEnvVars = {},
+  promptVariables = {}
+}: Omit<ScriptRequestExecution, 'collectionPath'>) => {
+  const resolvedEnvironmentVariables = { ...envVariables };
+  Object.entries(resolvedEnvironmentVariables).forEach(([name, value]) => {
+    resolvedEnvironmentVariables[name] = interpolate(value, { process: { env: processEnvVars } });
+  });
+
+  const variables = {
+    ...globalEnvironmentVariables,
+    ...collectionVariables,
+    ...resolvedEnvironmentVariables,
+    ...folderVariables,
+    ...requestVariables,
+    ...runtimeVariables,
+    ...promptVariables,
+    process: { env: processEnvVars }
+  };
+  const resolve = (value: any) => interpolate(String(value ?? ''), variables);
+  const args = (request?.args || [])
+    .filter((arg: any) => arg?.enabled !== false)
+    .map((arg: any) => resolve(typeof arg === 'object' ? arg.value : arg));
+  const env = (request?.env || [])
+    .filter((entry: any) => entry?.enabled !== false && entry?.name)
+    .reduce((result: Record<string, string>, entry: any) => {
+      result[resolve(entry.name)] = resolve(entry.value);
+      return result;
+    }, {});
+
+  return { filePath: resolve(request?.url), args, env };
+};
+
+export const executeScriptRequest = async (options: ScriptRequestExecution) => {
+  const { request, collectionPath, baseProcessEnv = process.env, signal, onStdout, onStderr } = options;
+  const resolved = resolveScriptRequest(options);
+  const startedAt = Date.now();
+  const requestSent = {
+    url: resolved.filePath,
+    method: 'SCRIPT',
+    headers: resolved.env,
+    data: resolved.args,
+    timestamp: startedAt
+  };
+  options.onStart?.(requestSent);
+  const result = await executeScript({
+    filePath: resolved.filePath,
+    args: resolved.args,
+    env: { ...baseProcessEnv, ...resolved.env },
+    cwd: collectionPath,
+    signal,
+    onStdout,
+    onStderr
+  });
+  const duration = Date.now() - startedAt;
+  const output = result.output ?? (result.stderr
+    ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}`
+    : result.stdout);
+
+  return {
+    ...result,
+    output,
+    duration,
+    requestSent,
+    response: {
+      status: result.exitCode === 0 ? 200 : result.exitCode,
+      statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`,
+      headers: { 'content-type': 'text/plain; charset=utf-8' },
+      data: output,
+      dataBuffer: Buffer.from(output),
+      size: Buffer.byteLength(output),
+      duration,
+      isError: result.exitCode !== 0
+    }
+  };
 };
 
 /** Execute a local script without a shell. Keeping shell disabled avoids quoting

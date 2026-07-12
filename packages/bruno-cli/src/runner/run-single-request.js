@@ -20,6 +20,7 @@ const { createFormData } = require('../utils/form-data');
 const { NtlmClient } = require('axios-ntlm');
 const { addDigestInterceptor, addEdgeGridInterceptor, getHttpHttpsAgents, makeAxiosInstance: makeAxiosInstanceForOauth2, applyOAuth1ToRequest } = require('@usebruno/requests');
 const { getCACertificates, transformProxyConfig } = require('@usebruno/requests');
+const { executeScriptRequest } = require('@usebruno/requests');
 const { getOAuth2Token, getFormattedOauth2Credentials } = require('../utils/oauth2');
 const tokenStore = require('../store/tokenStore');
 const { encodeUrl, buildFormUrlEncodedPayload, extractPromptVariables, isFormData, extractBoundaryFromContentType, hasExplicitScheme } = require('@usebruno/common').utils;
@@ -160,6 +161,76 @@ const runSingleRequest = async function (
     let postResponseTestResults = [];
 
     request = await prepareRequest(item, collection);
+
+    if (item.type === 'script-request') {
+      const scriptRequest = item.request;
+      const scriptPromptVars = extractPromptVariables({
+        request: { url: scriptRequest.url, args: scriptRequest.args, env: scriptRequest.env },
+        variables: {
+          ...globalEnvVars,
+          ...(scriptRequest.collectionVariables || {}),
+          ...envVariables,
+          ...(scriptRequest.folderVariables || {}),
+          ...(scriptRequest.requestVariables || {}),
+          ...runtimeVariables
+        }
+      });
+      if (scriptPromptVars.length > 0) {
+        const errorMsg = `Prompt variables detected in request. CLI execution is not supported for requests with prompt variables. \nPrompts: ${scriptPromptVars.join(', ')}`;
+        return {
+          test: { filename: relativeItemPathname },
+          request: { method: 'SCRIPT', url: scriptRequest.url, headers: {}, data: [] },
+          response: { status: 'skipped', statusText: errorMsg, data: null, responseTime: 0, duration: 0, size: 0 },
+          error: null,
+          status: 'skipped',
+          skipped: true,
+          assertionResults: [],
+          testResults: [],
+          preRequestTestResults: [],
+          postResponseTestResults: [],
+          shouldStopRunnerExecution
+        };
+      }
+
+      const execution = await executeScriptRequest({
+        request: scriptRequest,
+        collectionPath,
+        globalEnvironmentVariables: globalEnvVars,
+        collectionVariables: scriptRequest.collectionVariables || {},
+        envVariables,
+        folderVariables: scriptRequest.folderVariables || {},
+        requestVariables: scriptRequest.requestVariables || {},
+        runtimeVariables,
+        processEnvVars,
+        onStdout: (data) => process.stdout.write(data),
+        onStderr: (data) => process.stderr.write(data)
+      });
+      const failed = execution.exitCode !== 0;
+      if (execution.output && !execution.output.endsWith('\n')) {
+        process.stdout.write('\n');
+      }
+      console.log(
+        (failed ? chalk.red : chalk.green)(stripExtension(relativeItemPathname))
+        + chalk.dim(` (${failed ? 'Error' : 'OK'}) - ${execution.duration} ms`)
+      );
+
+      return {
+        test: { filename: relativeItemPathname },
+        request: execution.requestSent,
+        response: {
+          ...execution.response,
+          dataBuffer: execution.response.dataBuffer,
+          responseTime: execution.duration
+        },
+        error: failed ? execution.response.statusText : null,
+        status: failed ? 'error' : 'pass',
+        assertionResults: [],
+        testResults: [],
+        preRequestTestResults: [],
+        postResponseTestResults: [],
+        shouldStopRunnerExecution
+      };
+    }
 
     // Set global environment variables on the request for scripts to access via bru.getGlobalEnvVar()
     request.globalEnvironmentVariables = globalEnvVars;
