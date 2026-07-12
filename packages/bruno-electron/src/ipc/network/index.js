@@ -1701,13 +1701,35 @@ const registerNetworkIpc = (mainWindow) => {
             const scriptRequest = item.draft?.request || item.request;
             const startedAt = Date.now();
             try {
-              const scriptEnv = (scriptRequest.env || []).filter((entry) => entry.enabled !== false && entry.name)
-                .reduce((result, entry) => ({ ...result, [entry.name]: entry.value || '' }), {});
-              const args = (scriptRequest.args || []).filter((arg) => arg.enabled !== false).map((arg) => arg.value || '');
-              const result = await executeScript({ filePath: scriptRequest.url, args, env: { ...process.env, ...scriptEnv }, cwd: collectionPath });
+              const requestTreePath = getTreePathFromCollectionToItem(collection, item);
+              mergeVars(collection, scriptRequest, requestTreePath || []);
+
+              const interpolationOptions = {
+                globalEnvironmentVariables: collection?.globalEnvironmentVariables || {},
+                collectionVariables: scriptRequest.collectionVariables || {},
+                envVars,
+                folderVariables: scriptRequest.folderVariables || {},
+                requestVariables: scriptRequest.requestVariables || {},
+                runtimeVariables: {
+                  ...(collection?.runtimeVariables || {}),
+                  ...(runtimeVariables || {}),
+                  ...(scriptRequest.collectionEnvironmentVars || {})
+                },
+                processEnvVars,
+                promptVariables: collection?.promptVariables || {}
+              };
+              const interpolate = (value) => interpolateString(String(value ?? ''), interpolationOptions);
+              const scriptEnv = (scriptRequest.env || [])
+                .filter((entry) => entry.enabled !== false && entry.name)
+                .reduce((result, entry) => ({ ...result, [interpolate(entry.name)]: interpolate(entry.value) }), {});
+              const args = (scriptRequest.args || [])
+                .filter((arg) => arg.enabled !== false)
+                .map((arg) => interpolate(arg.value));
+              const filePath = interpolate(scriptRequest.url);
+              const result = await executeScript({ filePath, args, env: { ...process.env, ...scriptEnv }, cwd: collectionPath });
               const output = result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout;
               const responseReceived = { status: result.exitCode === 0 ? 200 : result.exitCode, statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`, headers: { 'content-type': 'text/plain; charset=utf-8' }, data: output, dataBuffer: Buffer.from(output).toString('base64'), size: Buffer.byteLength(output), duration: Date.now() - startedAt };
-              mainWindow.webContents.send('main:run-folder-event', { type: 'request-sent', requestSent: { url: scriptRequest.url, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }, ...eventData });
+              mainWindow.webContents.send('main:run-folder-event', { type: 'request-sent', requestSent: { url: filePath, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }, ...eventData });
               mainWindow.webContents.send('main:run-folder-event', { type: 'response-received', responseReceived, ...(result.exitCode ? { error: responseReceived.statusText } : {}), ...eventData });
             } catch (error) {
               mainWindow.webContents.send('main:run-folder-event', { type: 'runner-request-error', error: error.message, ...eventData });
