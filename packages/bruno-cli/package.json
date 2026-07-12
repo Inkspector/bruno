@@ -36,8 +36,11 @@
     "api-scripting"
   ],
   "scripts": {
+    "build": "npm run build --workspace=@usebruno/common && npm run build --workspace=@usebruno/requests && npm run build --workspace=@usebruno/filestore && npm run build --workspace=@usebruno/converters",
     "test": "node --experimental-vm-modules $(npx which jest)",
-    "test:ci": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js"
+    "test:ci": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js",
+    "verify": "npm run build && npm run test:ci -- --runInBand",
+    "link:global": "npm link"
   },
   "files": [
     "src",
