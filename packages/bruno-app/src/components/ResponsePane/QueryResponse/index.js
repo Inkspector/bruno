@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import QueryResult from '../QueryResult';
-import { useInitialResponseFormat, useResponsePreviewFormatOptions } from '../QueryResult/index';
+import { RAW_FORMAT_OPTIONS, useInitialResponseFormat, useResponsePreviewFormatOptions } from '../QueryResult/index';
 import QueryResultTypeSelector from '../QueryResult/QueryResultTypeSelector/index';
 import StyledWrapper from './StyledWrapper';
 import classnames from 'classnames';
@@ -14,7 +14,8 @@ const QueryResponse = ({
   headers,
   error,
   hideResultTypeSelector,
-  docKey
+  docKey,
+  rawOnly = false
 }) => {
   const { initialFormat, initialTab } = useInitialResponseFormat(dataBuffer, headers);
   const previewFormatOptions = useResponsePreviewFormatOptions(dataBuffer, headers);
@@ -25,17 +26,17 @@ const QueryResponse = ({
 
   useEffect(() => {
     if (initialFormat !== null && initialTab !== null) {
-      setSelectedFormat(initialFormat);
-      setSelectedTab(initialTab);
+      setSelectedFormat(rawOnly ? 'raw' : initialFormat);
+      setSelectedTab(rawOnly ? 'editor' : initialTab);
     }
-  }, [initialFormat, initialTab]);
+  }, [initialFormat, initialTab, rawOnly]);
   return (
     <StyledWrapper>
       {!hideResultTypeSelector && (
         <div className="flex items-center justify-end p-2 result-type-selector">
 
           <QueryResultTypeSelector
-            formatOptions={previewFormatOptions}
+            formatOptions={rawOnly ? RAW_FORMAT_OPTIONS : previewFormatOptions}
             formatValue={selectedFormat}
             onFormatChange={(newFormat) => {
               setSelectedFormat(newFormat);
@@ -45,6 +46,7 @@ const QueryResponse = ({
             }}
             selectedTab={selectedTab}
             isActiveTab={true}
+            hidePreviewToggle={rawOnly}
           />
         </div>
       )}

@@ -38,6 +38,7 @@ import WSRequestPane from 'components/RequestPane/WSRequestPane';
 import WSResponsePane from 'components/ResponsePane/WsResponsePane';
 import ScriptRequestPane from 'components/RequestPane/ScriptRequestPane';
 import ScriptQueryUrl from 'components/RequestPane/ScriptQueryUrl';
+import ScriptResponsePane from 'components/ResponsePane/ScriptResponsePane';
 import { useTabPaneBoundaries } from 'hooks/useTabPaneBoundaries/index';
 import useKeybinding from 'hooks/useKeybinding';
 import { ScopedPersistenceProvider } from 'hooks/usePersistedState/PersistedScopeProvider';
@@ -623,6 +624,8 @@ const RequestTabPanel = () => {
         return <GrpcResponsePane item={item} collection={collection} response={item.response} />;
       case 'ws-request':
         return <WSResponsePane item={item} collection={collection} response={item.response} />;
+      case 'script-request':
+        return <ScriptResponsePane item={item} collection={collection} />;
       default:
         return <ResponsePane item={item} collection={collection} response={item.response} />;
     }

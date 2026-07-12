@@ -9,7 +9,7 @@ import QueryResultPreview from './QueryResultPreview';
 import StyledWrapper from './StyledWrapper';
 
 // Raw format options (for byte format types)
-const RAW_FORMAT_OPTIONS = [
+export const RAW_FORMAT_OPTIONS = [
   { id: 'raw', label: 'Raw', type: 'item', codeMirrorMode: 'text/plain' },
   { id: 'hex', label: 'Hex', type: 'item', codeMirrorMode: 'text/plain' },
   { id: 'base64', label: 'Base64', type: 'item', codeMirrorMode: 'text/plain' }

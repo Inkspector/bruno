@@ -9,7 +9,7 @@ const toEntries = (headers) => {
   return Object.entries(headers).map(([name, value]) => ({ name, value }));
 };
 
-const Headers = ({ headers }) => {
+const Headers = ({ headers, title = 'Headers', emptyLabel = `No ${title}` }) => {
   const [isOpen, setIsOpen] = useState(true);
   const entries = toEntries(headers);
   const count = entries.length;
@@ -26,12 +26,12 @@ const Headers = ({ headers }) => {
         <span className="tl-block-chev">
           {isOpen ? <IconChevronDown size={12} strokeWidth={2} /> : <IconChevronRight size={12} strokeWidth={2} />}
         </span>
-        Headers
+        {title}
         <span className="tl-block-count">({count})</span>
       </button>
       {isOpen && (
         count === 0
-          ? <div className="tl-empty">No Headers</div>
+          ? <div className="tl-empty">{emptyLabel}</div>
           : (
               <table className="tl-headers-table">
                 <tbody>

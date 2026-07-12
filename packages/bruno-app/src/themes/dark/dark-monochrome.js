@@ -225,7 +225,8 @@ const darkMonochromeTheme = {
 
     grpc: '#a3a3a3',
     ws: '#b0b0b0',
-    gql: '#9a9a9a'
+    gql: '#9a9a9a',
+    script: '#b0b0b0'
   },
 
   requestTabPanel: {

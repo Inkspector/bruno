@@ -238,7 +238,8 @@ const catppuccinFrappeTheme = {
 
     grpc: colors.SKY,
     ws: colors.MAUVE,
-    gql: colors.PINK
+    gql: colors.PINK,
+    script: colors.MAUVE
   },
 
   requestTabPanel: {

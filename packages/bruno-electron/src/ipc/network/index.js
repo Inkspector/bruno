@@ -1404,9 +1404,31 @@ const registerNetworkIpc = (mainWindow) => {
       .reduce((result, entry) => ({ ...result, [interpolate(entry.name)]: interpolate(entry.value) }), {});
 
     const startedAt = Date.now();
-    const result = await executeScript({ filePath: interpolate(request.url), args, env: { ...process.env, ...scriptEnv }, cwd: collection.pathname });
+    const filePath = interpolate(request.url);
+    mainWindow.webContents.send('main:script-request-started', {
+      collectionUid: collection.uid,
+      itemUid: item.uid,
+      requestSent: { url: filePath, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }
+    });
+    let seq = 0;
+    const sendChunk = (stream, data) => mainWindow.webContents.send('main:script-stream-data', {
+      collectionUid: collection.uid,
+      itemUid: item.uid,
+      seq: seq++,
+      stream,
+      data,
+      timestamp: Date.now()
+    });
+    const result = await executeScript({
+      filePath,
+      args,
+      env: { ...process.env, ...scriptEnv },
+      cwd: collection.pathname,
+      onStdout: (data) => sendChunk('stdout', data),
+      onStderr: (data) => sendChunk('stderr', data)
+    });
     const duration = Date.now() - startedAt;
-    const output = result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout;
+    const output = result.output ?? (result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout);
 
     return {
       status: result.exitCode === 0 ? 200 : result.exitCode,
@@ -1417,7 +1439,7 @@ const registerNetworkIpc = (mainWindow) => {
       size: Buffer.byteLength(output),
       duration,
       isError: result.exitCode !== 0,
-      requestSent: { url: request.url, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }
+      requestSent: { url: filePath, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }
     };
   });
 
@@ -1727,7 +1749,7 @@ const registerNetworkIpc = (mainWindow) => {
                 .map((arg) => interpolate(arg.value));
               const filePath = interpolate(scriptRequest.url);
               const result = await executeScript({ filePath, args, env: { ...process.env, ...scriptEnv }, cwd: collectionPath });
-              const output = result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout;
+              const output = result.output ?? (result.stderr ? `${result.stdout}${result.stdout && !result.stdout.endsWith('\n') ? '\n' : ''}${result.stderr}` : result.stdout);
               const responseReceived = { status: result.exitCode === 0 ? 200 : result.exitCode, statusText: result.exitCode === 0 ? 'Script completed' : `Script exited with code ${result.exitCode}`, headers: { 'content-type': 'text/plain; charset=utf-8' }, data: output, dataBuffer: Buffer.from(output).toString('base64'), size: Buffer.byteLength(output), duration: Date.now() - startedAt };
               mainWindow.webContents.send('main:run-folder-event', { type: 'request-sent', requestSent: { url: filePath, method: 'SCRIPT', headers: scriptEnv, data: args, timestamp: startedAt }, ...eventData });
               mainWindow.webContents.send('main:run-folder-event', { type: 'response-received', responseReceived, ...(result.exitCode ? { error: responseReceived.statusText } : {}), ...eventData });

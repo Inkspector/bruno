@@ -7,6 +7,8 @@ import { RelativeTime } from './Common/Time/index';
 import Network from './Network/index';
 import Request from './Request/index';
 import Response from './Response/index';
+import ScriptRequest from './ScriptRequest/index';
+import ScriptResponse from './ScriptResponse/index';
 import StyledWrapper from './StyledWrapper';
 import { usePersistedState } from 'hooks/usePersistedState/index';
 import { flattenItems } from 'utils/collections/index';
@@ -37,6 +39,7 @@ const TimelineItem = ({
   scope,
   phase
 }) => {
+  const isScriptRequest = item?.type === 'script-request' && source === 'main';
   const dispatch = useDispatch();
   const [isExpanded, _toggleExpand] = usePersistedState({
     key: `timeline-${timestamp}`,
@@ -74,6 +77,9 @@ const TimelineItem = ({
   const code = numericCode != null
     ? numericCode
     : (statusText || (error ? 'Error' : undefined));
+  const displayedCode = isScriptRequest
+    ? (numericCode === 200 ? 'OK' : numericCode != null || error ? 'Error' : code)
+    : code;
   const showNetworkLogs = response?.timeline && response.timeline.length > 0;
   const badge = getBadge({ source, isOauth2 });
 
@@ -151,7 +157,7 @@ const TimelineItem = ({
             {isExpanded ? <IconChevronDown size={14} strokeWidth={2} /> : <IconChevronRight size={14} strokeWidth={2} />}
           </div>
           <div className="tl-col-status">
-            <Status statusCode={code} />
+            <Status statusCode={displayedCode} statusKind={isScriptRequest ? (displayedCode === 'OK' ? 'success' : 'error') : undefined} />
           </div>
           <div className="tl-col-method">
             <Method method={method} />
@@ -204,12 +210,16 @@ const TimelineItem = ({
             <div className="tl-panel">
               {visitedTabs.request && (
                 <div style={{ display: activeTab === 'request' ? 'block' : 'none' }}>
-                  <Request request={request} item={item} collection={collection} />
+                  {isScriptRequest
+                    ? <ScriptRequest request={request} />
+                    : <Request request={request} item={item} collection={collection} />}
                 </div>
               )}
               {visitedTabs.response && (
                 <div style={{ display: activeTab === 'response' ? 'block' : 'none' }}>
-                  <Response response={response} item={item} collection={collection} />
+                  {isScriptRequest
+                    ? <ScriptResponse response={response} item={item} collection={collection} />
+                    : <Response response={response} item={item} collection={collection} />}
                 </div>
               )}
               {showNetworkLogs && visitedTabs.network && (

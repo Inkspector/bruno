@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { IconChevronDown, IconChevronRight } from '@tabler/icons';
 import QueryResponse from 'components/ResponsePane/QueryResponse/index';
 
-const BodyBlock = ({ collection, data, dataBuffer, headers, error, item, type }) => {
+const BodyBlock = ({ collection, data, dataBuffer, headers, error, item, type, label = 'Body', rawOnly = false }) => {
   const [isOpen, setIsOpen] = useState(true);
   const hasBody = !!(data || dataBuffer);
 
@@ -18,7 +18,7 @@ const BodyBlock = ({ collection, data, dataBuffer, headers, error, item, type })
         <span className="tl-block-chev">
           {isOpen ? <IconChevronDown size={12} strokeWidth={2} /> : <IconChevronRight size={12} strokeWidth={2} />}
         </span>
-        Body
+        {label}
       </button>
       {isOpen && (
         hasBody ? (
@@ -33,10 +33,11 @@ const BodyBlock = ({ collection, data, dataBuffer, headers, error, item, type })
               key={item?.uid}
               hideResultTypeSelector={type === 'request'}
               docKey={`timeline-body:${type}:${item?.uid}`}
+              rawOnly={rawOnly}
             />
           </div>
         ) : (
-          <div className="tl-empty">No Body</div>
+          <div className="tl-empty">No {label}</div>
         )
       )}
     </div>

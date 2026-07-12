@@ -24,6 +24,8 @@ import {
   scriptEnvironmentUpdateEvent,
   runtimeVariablesUpdateEvent,
   streamDataReceived,
+  scriptStreamDataReceived,
+  scriptRequestStarted,
   setDotEnvVariables
 } from 'providers/ReduxStore/slices/collections';
 import { collectionAddEnvFileEvent, openCollectionEvent, hydrateCollectionWithUiStateSnapshot, persistActiveEnvironment, collectionVariablesUpdateEvent } from 'providers/ReduxStore/slices/collections/actions';
@@ -350,6 +352,14 @@ const useIpcEvents = () => {
       dispatch(requestCancelled(val));
     });
 
+    const removeScriptStreamDataListener = ipcRenderer.on('main:script-stream-data', (val) => {
+      dispatch(scriptStreamDataReceived(val));
+    });
+
+    const removeScriptRequestStartedListener = ipcRenderer.on('main:script-request-started', (val) => {
+      dispatch(scriptRequestStarted(val));
+    });
+
     const removeCollectionLoadingStateListener = ipcRenderer.on('main:collection-loading-state-updated', (val) => {
       dispatch(updateCollectionLoadingState(val));
     });
@@ -405,6 +415,8 @@ const useIpcEvents = () => {
       removeCollectionOauth2CredentialsUpdatesListener();
       removeCollectionOauth2CredentialsClearListener();
       removeHttpStreamNewDataListener();
+      removeScriptStreamDataListener();
+      removeScriptRequestStartedListener();
       removeHttpStreamEndListener();
       removeCollectionLoadingStateListener();
       removeCollectionVariablesUpdateListener();

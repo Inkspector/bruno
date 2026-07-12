@@ -8,6 +8,8 @@ import { getPropertyFromDraftOrRequest } from 'utils/collections/index';
 import StyledWrapper from './StyledWrapper';
 import ScriptArgs from './ScriptArgs';
 import ScriptEnv from './ScriptEnv';
+import Documentation from 'components/Documentation/index';
+import StatusDot from 'components/StatusDot/index';
 
 const ScriptRequestPane = ({ item, collection, handleRun }) => {
   const dispatch = useDispatch();
@@ -17,7 +19,7 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
   const rightContentRef = useRef(null);
 
   const focusedTab = find(tabs, (t) => t.uid === activeTabUid);
-  const requestPaneTab = ['args', 'env'].includes(focusedTab?.requestPaneTab)
+  const requestPaneTab = ['args', 'env', 'docs'].includes(focusedTab?.requestPaneTab)
     ? focusedTab.requestPaneTab
     : 'args';
 
@@ -33,6 +35,7 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
 
   const env = getPropertyFromDraftOrRequest(item, 'request.env') || [];
   const args = getPropertyFromDraftOrRequest(item, 'request.args') || [];
+  const docs = getPropertyFromDraftOrRequest(item, 'request.docs');
   const activeEnvLength = env.filter((envItem) => envItem.enabled).length;
   const activeArgsLength = args.filter((arg) => typeof arg === 'string' ? arg.trim().length > 0 : Boolean(arg)).length;
 
@@ -47,9 +50,14 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
         key: 'env',
         label: 'Env',
         indicator: activeEnvLength > 0 ? <sup className="ml-[.125rem] font-medium">{activeEnvLength}</sup> : null
+      },
+      {
+        key: 'docs',
+        label: 'Docs',
+        indicator: docs && docs.length > 0 ? <StatusDot type="default" /> : null
       }
     ];
-  }, [activeEnvLength, activeArgsLength]);
+  }, [activeEnvLength, activeArgsLength, docs]);
 
   const tabPanel = useMemo(() => {
     switch (requestPaneTab) {
@@ -58,6 +66,9 @@ const ScriptRequestPane = ({ item, collection, handleRun }) => {
       }
       case 'env': {
         return <ScriptEnv item={item} collection={collection} addHeaderText="Set Env" />;
+      }
+      case 'docs': {
+        return <Documentation item={item} collection={collection} />;
       }
       default: {
         return <ScriptArgs item={item} collection={collection} />;

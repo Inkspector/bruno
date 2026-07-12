@@ -16,7 +16,7 @@ const Wrapper = styled.div`
     border-bottom-left-radius: ${(props) => props.theme.border.radius.base};
     border: ${(props) => props.theme.requestTabPanel.url.border};
     border-right: none;
-    padding: 0 10px;
+    padding: 2px;
   }
 
   .browse-button {
@@ -25,7 +25,10 @@ const Wrapper = styled.div`
     color: ${(props) => props.theme.request.script || props.theme.colors.text.purple};
     cursor: pointer;
     font-weight: 500;
-    padding: 0;
+    padding: 0 8px;
+    height: 100%;
+    border-radius: ${(props) => props.theme.border.radius.sm};
+    transition: background-color 0.15s ease;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -33,7 +36,7 @@ const Wrapper = styled.div`
   }
 
   .browse-button:hover {
-    text-decoration: underline;
+    background-color: color-mix(in srgb, currentColor 15%, transparent);
   }
 
   .input-container {

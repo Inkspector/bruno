@@ -7,6 +7,7 @@ import SendButton from 'components/RequestPane/SendButton';
 import SingleLineEditor from 'components/SingleLineEditor';
 import { useTheme } from 'providers/Theme';
 import StyledWrapper from './StyledWrapper';
+import { IconUpload } from '@tabler/icons';
 
 const ScriptQueryUrl = ({ item, collection, handleRun }) => {
   const dispatch = useDispatch();
@@ -39,7 +40,7 @@ const ScriptQueryUrl = ({ item, collection, handleRun }) => {
     <StyledWrapper data-testid="script-query-url-container">
       <div className="browse-button-container">
         <button type="button" className="browse-button" onClick={chooseFile} title="Browse for script file">
-          Browse
+          <IconUpload size={15} strokeWidth={1.5} />
         </button>
       </div>
 

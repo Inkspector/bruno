@@ -3663,6 +3663,40 @@ export const collectionsSlice = createSlice({
         item.response.size = data.data?.length + (item.response.size || 0);
       }
     },
+    scriptStreamDataReceived: (state, action) => {
+      const { itemUid, collectionUid, data } = action.payload;
+      const collection = findCollectionByUid(state.collections, collectionUid);
+      const item = collection && findItemInCollection(collection, itemUid);
+      if (!item || typeof data !== 'string') return;
+
+      if (!item.response || !item.response.stream?.running) {
+        item.response = {
+          status: null,
+          statusText: 'Running',
+          headers: { 'content-type': 'text/plain; charset=utf-8' },
+          data: '',
+          dataBuffer: '',
+          size: 0,
+          duration: item.requestStartTime ? Date.now() - item.requestStartTime : 0,
+          stream: { running: true }
+        };
+      }
+
+      const chunk = Buffer.from(data);
+      const previousBuffer = item.response.dataBuffer ? Buffer.from(item.response.dataBuffer, 'base64') : Buffer.alloc(0);
+      item.response.data += data;
+      item.response.dataBuffer = Buffer.concat([previousBuffer, chunk]).toString('base64');
+      item.response.size += chunk.length;
+      item.response.duration = item.requestStartTime ? Date.now() - item.requestStartTime : item.response.duration;
+    },
+    scriptRequestStarted: (state, action) => {
+      const { itemUid, collectionUid, requestSent } = action.payload;
+      const collection = findCollectionByUid(state.collections, collectionUid);
+      const item = collection && findItemInCollection(collection, itemUid);
+      if (!item) return;
+      item.requestSent = requestSent;
+      item.requestState = 'sending';
+    },
     addRequestTag: (state, action) => {
       const { tag, collectionUid, itemUid } = action.payload;
       const collection = findCollectionByUid(state.collections, collectionUid);
@@ -4073,6 +4107,8 @@ export const {
   appSetRuntimeVariable,
   moveCollection,
   streamDataReceived,
+  scriptStreamDataReceived,
+  scriptRequestStarted,
   collectionAddOauth2CredentialsByUrl,
   collectionClearOauth2CredentialsByUrlAndCredentialsId,
   collectionClearOauth2CredentialsByCredentialsId,

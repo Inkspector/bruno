@@ -331,7 +331,7 @@ export const ossSchema = {
         ws: { type: 'string' },
         gql: { type: 'string' }
       },
-      required: ['methods', 'grpc', 'ws', 'gql'],
+      required: ['methods', 'script', 'grpc', 'ws', 'gql'],
       additionalProperties: false
     },
 

@@ -6,7 +6,7 @@ const Method = ({ method }) => {
 
   const methodColor = useMemo(() => {
     const methodLower = method?.toLowerCase();
-    return theme.request.methods[methodLower] || theme.text;
+    return theme.request.methods[methodLower] || theme.request[methodLower] || theme.text;
   }, [method, theme]);
 
   return (

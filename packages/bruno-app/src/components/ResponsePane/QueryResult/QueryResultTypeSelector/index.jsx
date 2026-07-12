@@ -47,7 +47,8 @@ const QueryResultTypeSelector = ({
   onPreviewTabSelect,
   selectedTab,
   isActiveTab,
-  onTabSelect
+  onTabSelect,
+  hidePreviewToggle = false
 }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -99,7 +100,7 @@ const QueryResultTypeSelector = ({
     };
   });
 
-  const header = (
+  const header = hidePreviewToggle ? null : (
     <div className="flex items-center justify-between gap-3 py-[0.35rem] px-[0.6rem]">
       <span className="text-[0.8125rem] preview-response-tab-label">Preview</span>
       <ToggleSwitch

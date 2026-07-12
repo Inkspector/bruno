@@ -51,3 +51,26 @@ describe('stringifyItem — typed runtime.variables', () => {
     expect(reqVars[4].dataType).toBeUndefined();
   });
 });
+
+describe('stringifyItem — script request documentation', () => {
+  it('round-trips docs for script requests', () => {
+    const item = {
+      type: 'script-request',
+      name: 'documented script',
+      seq: 1,
+      request: {
+        method: 'SCRIPT',
+        url: './script.sh',
+        args: [],
+        env: [],
+        docs: 'Runs the local setup script.'
+      }
+    } as any;
+
+    const yml = stringifyItem(item);
+    const reparsed = parseItem(yml);
+
+    expect(yml).toContain('docs: Runs the local setup script.');
+    expect(reparsed.request?.docs).toBe('Runs the local setup script.');
+  });
+});

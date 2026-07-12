@@ -2,12 +2,16 @@ import React from 'react';
 import { useTheme } from 'providers/Theme';
 import { rgba } from 'polished';
 
-const Status = ({ statusCode }) => {
+const Status = ({ statusCode, statusKind }) => {
   const { theme } = useTheme();
   const isStringCode = typeof statusCode === 'string' && statusCode.length > 0;
 
   let color = theme.colors.text.muted;
-  if (statusCode >= 200 && statusCode < 300) {
+  if (statusKind === 'success') {
+    color = theme.requestTabPanel.responseOk;
+  } else if (statusKind === 'error') {
+    color = theme.requestTabPanel.responseError;
+  } else if (statusCode >= 200 && statusCode < 300) {
     color = theme.requestTabPanel.responseOk;
   } else if (statusCode >= 300 && statusCode < 400) {
     color = theme.colors.text.warning;

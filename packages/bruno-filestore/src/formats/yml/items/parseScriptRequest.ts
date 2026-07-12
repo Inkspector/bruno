@@ -6,7 +6,7 @@ const parseScriptRequest = (item: any): any => ({
   settings: item.settings || {}, app: null, fileContent: null, root: null, items: [], examples: [], filename: null, pathname: null,
   request: {
     method: 'SCRIPT', url: ensureString(item.script?.path), args: item.script?.args || [], env: item.script?.env || [],
-    headers: [], params: [], body: { mode: 'none' }, auth: { mode: 'none' }, script: { req: null, res: null }, vars: { req: [], res: [] }, assertions: [], tests: null, docs: null
+    headers: [], params: [], body: { mode: 'none' }, auth: { mode: 'none' }, script: { req: null, res: null }, vars: { req: [], res: [] }, assertions: [], tests: null, docs: typeof item.docs === 'string' ? item.docs : item.docs?.content || null
   }
 });
 export default parseScriptRequest;

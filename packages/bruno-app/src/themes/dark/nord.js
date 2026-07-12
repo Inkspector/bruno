@@ -242,7 +242,8 @@ const nordTheme = {
     },
     grpc: colors.NORD8,
     ws: colors.NORD13,
-    gql: colors.NORD15
+    gql: colors.NORD15,
+    script: colors.NORD15
   },
 
   requestTabPanel: {

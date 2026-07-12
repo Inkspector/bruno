@@ -23,11 +23,11 @@ FORMAT=$(echo "$FORMAT" | tr '[:lower:]' '[:upper:]')
 # On redirige la sortie standard et les erreurs selon le besoin
 if [ "$FORMAT" = "JSON" ]; then
     # En mode JSON, on masque la sortie du ping pour ne garder que le statut
-    ping -c "$COUNT" -t 1 "$IP_ADDRESS" > /dev/null 2>&1
+    ping -c "$COUNT" -W 1000 "$IP_ADDRESS" > /dev/null 2>&1
     PING_STATUS=$?
 else
     # En mode RAW, on laisse le ping afficher son résultat dans le terminal
-    ping -c "$COUNT" -t 1 "$IP_ADDRESS"
+    ping -c "$COUNT" -W 1000 "$IP_ADDRESS"
     PING_STATUS=$?
 fi
 
