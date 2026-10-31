@@ -26,6 +26,7 @@ const interpolateVars = require('./interpolate-vars');
 const { applyCollectionVarsToCollectionRoot } = require('./apply-collection-vars');
 const { makeAxiosInstance, completeOpenHop } = require('./axios-instance');
 const { refreshExplicitHeaderNames } = require('@usebruno/common');
+const { findNextRequestIndex } = require('@usebruno/common/runner');
 const { resolveInheritedSettings } = require('../../utils/collection');
 const { cancelTokens, saveCancelToken, deleteCancelToken } = require('../../utils/cancel-token');
 const { uuid, safeStringifyJSON, safeParseJSON, parseDataFromResponse, parseDataFromRequest, isBinaryRequestBody } = require('../../utils/common');
@@ -2174,11 +2175,11 @@ const registerNetworkIpc = (mainWindow) => {
             if (nextRequestName === null) {
               break;
             }
-            const nextRequestIdx = folderRequests.findIndex((request) => request.name === nextRequestName);
+            const nextRequestIdx = findNextRequestIndex(folderRequests, nextRequestName, collectionPath);
             if (nextRequestIdx >= 0) {
               currentRequestIndex = nextRequestIdx;
             } else {
-              console.error('Could not find request with name \'' + nextRequestName + '\'');
+              console.error('Could not find request with name or path \'' + nextRequestName + '\' in the current run');
               currentRequestIndex++;
             }
           } else {

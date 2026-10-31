@@ -1,0 +1,19 @@
+meta {
+  name: Get Fact
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{host}}/fact?from=folder2
+  body: none
+  auth: none
+}
+
+script:post-response {
+  const loops = bru.getVar('loops') || 0;
+  if (loops < 2) {
+    bru.setVar('loops', loops + 1);
+    bru.runner.setNextRequest(bru.getEnvVar('nextRequestTarget'));
+  }
+}

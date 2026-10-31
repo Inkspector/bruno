@@ -950,7 +950,7 @@ describe('Bruno Autocomplete', () => {
         expect(result).toBeTruthy();
         expect(result.list).toEqual(
           expect.arrayContaining([
-            'setNextRequest(requestName)',
+            'setNextRequest(requestNameOrPath)',
             'skipRequest()',
             'stopExecution()'
           ])

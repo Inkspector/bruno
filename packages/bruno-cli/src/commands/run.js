@@ -2,7 +2,7 @@ const fs = require('fs');
 const chalk = require('chalk');
 const path = require('path');
 const { forOwn, cloneDeep } = require('lodash');
-const { getRunnerSummary } = require('@usebruno/common/runner');
+const { getRunnerSummary, findNextRequestIndex } = require('@usebruno/common/runner');
 const { exists, stripExtension, isSafeFileName } = require('../utils/filesystem');
 const { runSingleRequest } = require('../runner/run-single-request');
 const { isRequestTagsIncluded } = require('@usebruno/common');
@@ -927,11 +927,11 @@ const handler = async function (argv) {
         if (nextRequestName === null) {
           break;
         }
-        const nextRequestIdx = requestItems.findIndex((iter) => iter.name === nextRequestName);
+        const nextRequestIdx = findNextRequestIndex(requestItems, nextRequestName, collectionPath);
         if (nextRequestIdx >= 0) {
           currentRequestIndex = nextRequestIdx;
         } else {
-          console.error('Could not find request with name \'' + nextRequestName + '\'');
+          console.error('Could not find request with name or path \'' + nextRequestName + '\' in the current run');
           currentRequestIndex++;
         }
       } else {
